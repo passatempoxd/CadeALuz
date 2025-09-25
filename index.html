@@ -70,7 +70,6 @@
             border-color: #ff8c00;
             box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.1);
         }
-        /* Estilo para o campo de busca de endereço */
         .address-search-group {
             display: flex;
             gap: 10px;
@@ -137,7 +136,7 @@
                     <div class="form-group">
                         <label for="address">🔎 Endereço:</label>
                         <div class="address-search-group">
-                            <input type="text" id="address" placeholder="Ex: Av. Paulista, 1578, São Paulo">
+                            <input type="text" id="address" placeholder="Ex: Av. Inocêncio Seráfico, Carapicuíba">
                             <button type="button" id="searchBtn" class="search-btn">Buscar</button>
                         </div>
                     </div>
@@ -201,7 +200,8 @@
         }
 
         // 2. INICIALIZAÇÃO DO MAPA
-        const map = L.map('map').setView([-14.2350, -51.9253], 4); // Centro no Brasil
+        // ALTERADO: Centralizado em Carapicuíba com zoom 14
+        const map = L.map('map').setView([-23.5244, -46.8354], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
@@ -240,7 +240,7 @@
             document.getElementById('longitude').value = lng.toFixed(6);
         }
 
-        // 5. // NOVO: FUNÇÃO PARA BUSCAR ENDEREÇO (GEOCODING)
+        // 5. FUNÇÃO PARA BUSCAR ENDEREÇO (GEOCODING)
         async function geocodeAddress() {
             const address = document.getElementById('address').value;
             if (!address) {
@@ -273,9 +273,7 @@
         // 6. EVENT LISTENERS
         map.on('click', (e) => updateSelectionMarker(e.latlng.lat, e.latlng.lng));
 
-        // NOVO: Listener para o botão de busca
         document.getElementById('searchBtn').addEventListener('click', geocodeAddress);
-        // NOVO: Listener para a tecla "Enter" no campo de endereço
         document.getElementById('address').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault(); // Impede o envio do formulário
