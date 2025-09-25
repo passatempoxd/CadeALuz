@@ -9,53 +9,174 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-firestore-compat.min.js"></script>
     
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
+        /* --- ESTILOS VISUAIS COMPLETAMENTE REFEITOS --- */
+        :root {
+            --bg-dark: #1a1a2e;
+            --container-dark: #1f1f3a;
+            --input-dark: #2c2c4c;
+            --primary-accent: #8e2de2;
+            --secondary-accent: #4a00e0;
+            --text-light: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --border-color: #40405c;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
             min-height: 100vh;
             padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .container { max-width: 1200px; margin: 0 auto; background: rgba(255, 255, 255, 0.98); border-radius: 20px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); overflow: hidden; }
-        .header { background: linear-gradient(135deg, #ff8c00 0%, #ffc107 100%); color: white; padding: 30px; text-align: center; }
-        .header h1 { font-size: 2.5rem; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--container-dark);
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            text-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+        }
+        
         .content { display: grid; grid-template-columns: 1fr 2fr; min-height: 600px; }
-        .form-section { padding: 40px; display: flex; flex-direction: column; justify-content: center; border-right: 1px solid #eee; }
+        
+        .form-section {
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .form-section h3, .form-section p {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .form-section h3 { font-size: 1.5rem; color: white; font-weight: 600; }
+        .form-section p { color: var(--text-muted); }
+        
         .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
-        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 15px; border: 2px solid #e1e5e9; border-radius: 12px; font-size: 1rem; transition: all 0.3s ease; background: #fafbfc; }
-        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #ff8c00; box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.1); }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-light); }
+        
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s ease;
+            background: var(--input-dark);
+            color: var(--text-light);
+        }
+        .form-group input::placeholder, .form-group textarea::placeholder { color: var(--text-muted); }
+        
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 15px rgba(142, 45, 226, 0.4);
+            background: var(--container-dark);
+        }
+        
         .address-search-group { display: flex; gap: 10px; }
         .address-search-group input { flex-grow: 1; }
-        .search-btn { padding: 0 20px; background: #6c757d; color: white; border: none; border-radius: 12px; cursor: pointer; transition: background 0.3s; }
-        .search-btn:hover { background: #5a6268; }
-        .submit-btn { background: linear-gradient(135deg, #ff8c00 0%, #ffc107 100%); color: white; border: none; padding: 15px 40px; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
-        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        #map { height: 100%; min-height: 600px; }
+        
+        .search-btn, .submit-btn, .resolve-btn {
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+        }
+
+        .search-btn {
+            padding: 0 20px;
+            background: #444;
+            color: var(--text-light);
+        }
+        .search-btn:hover { background: #555; }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
+            color: white;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            box-shadow: 0 5px 15px rgba(142, 45, 226, 0.3);
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(142, 45, 226, 0.5);
+        }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+        
+        #map { height: 100%; min-height: 600px; background: var(--bg-dark); }
+        
+        /* POPUP DO MAPA ESTILIZADO */
+        .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+            background: var(--container-dark);
+            color: var(--text-light);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        }
+        .leaflet-popup-content { font-size: 14px; margin: 15px; }
+        .leaflet-popup-content h4 { margin: 0 0 10px; color: white; font-weight: 600; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+        .leaflet-popup-content p { margin: 5px 0; color: var(--text-muted); }
+        .leaflet-popup-content p strong { color: var(--text-light); }
+        .leaflet-container a.leaflet-popup-close-button { color: var(--text-light); }
+        
+        .resolve-btn {
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+            background-color: #28a745;
+            color: white;
+        }
+        .resolve-btn:hover { background-color: #218838; }
+        
         .status-message { margin-top: 20px; padding: 15px; border-radius: 12px; font-weight: 600; text-align: center; opacity: 0; transition: all 0.3s ease; }
         .status-message.show { opacity: 1; }
-        .status-message.success { background-color: #28a745; color: white; }
-        .status-message.error { background-color: #dc3545; color: white; }
-        .leaflet-popup-content-wrapper { border-radius: 8px; }
-        .leaflet-popup-content { font-size: 14px; margin: 10px; }
-        .leaflet-popup-content h4 { margin: 0 0 10px; color: #ff8c00; }
-        .leaflet-popup-content p { margin: 5px 0; }
-        .resolve-btn { width: 100%; padding: 8px; margin-top: 10px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .resolve-btn:hover { background-color: #218838; }
+        .status-message.success { background: #28a745; color: white; }
+        .status-message.error { background: #dc3545; color: white; }
+
         @media (max-width: 860px) {
+            body { padding: 0; }
+            .container { border-radius: 0; }
             .content { grid-template-columns: 1fr; }
-            .form-section { border-right: none; border-bottom: 1px solid #eee; }
+            .form-section { border-right: none; border-bottom: 1px solid var(--border-color); padding: 30px 20px; }
         }
     </style>
-    </head>
+</head>
 <body>
     <div class="container">
         <div class="header"><h1>💡 Cadê a Luz?</h1></div>
         <div class="content">
             <div class="form-section">
                 <h3>Reportar um Problema</h3>
-                <p style="margin-bottom: 20px; color: #666;">Digite o endereço ou clique no mapa para selecionar o local.</p>
+                <p>Digite o endereço ou clique no mapa para selecionar o local.</p>
                 <form id="reportForm">
                     <div class="form-group">
                         <label for="address">🔎 Endereço:</label>
@@ -114,7 +235,13 @@
         } catch (error) { showStatus('Erro crítico: A configuração do Firebase é inválida.', 'error'); }
 
         const map = L.map('map').setView([-23.5244, -46.8354], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(map);
+        
+        // NOVO MAPA ESCURO DO CARTODB
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
 
         let currentMarker = null;
         const outageMarkersLayer = L.layerGroup().addTo(map);
@@ -137,7 +264,7 @@
                         <h4>${data.problemType}</h4>
                         <p><strong>Descrição:</strong> ${data.description || 'Nenhuma'}</p>
                         <p><strong>Reportado por:</strong> ${reporterName}</p>
-                        <p><strong>Reportado em:</strong> ${data.timestamp.toDate().toLocaleString('pt-BR')}</p>
+                        <p><strong>Reportado em:</strong> ${data.timestamp ? data.timestamp.toDate().toLocaleString('pt-BR') : 'Data indisponível'}</p>
                         <button class="resolve-btn" data-id="${doc.id}">A Energia Voltou!</button>
                     `;
                     marker.bindPopup(popupContent);
