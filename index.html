@@ -80,6 +80,20 @@
     </style>
 </head>
 <body>
+    <div id="debug-info" style="background: #ffc; border: 2px solid #f00; padding: 15px; margin: 20px; font-family: monospace; white-space: pre-wrap; z-index: 9999; position: relative;"></div>
+<script>
+  // Atrasar a execução para garantir que a config foi definida
+  setTimeout(() => {
+    try {
+      const config = window.firebaseConfig;
+      const debugDiv = document.getElementById('debug-info');
+      debugDiv.innerHTML = '<h2>Configuração do Firebase Recebida pelo Site:</h2>';
+      debugDiv.innerHTML += JSON.stringify(config, null, 2);
+    } catch(e) {
+      document.getElementById('debug-info').innerText = 'Erro ao ler a configuração do Firebase.';
+    }
+  }, 500);
+</script>
     <div class="container">
         <div class="header"><h1>💡 Cadê a Luz?</h1></div>
         <div class="content">
@@ -125,8 +139,10 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     
     <script>
+        window.firebaseConfig = {
+    apiKey: "__FIREBASE_API_KEY__",
+};
         const firebaseConfig = {
-            apiKey: "__FIREBASE_API_KEY__",
             authDomain: "__FIREBASE_AUTH_DOMAIN__",
             projectId: "__FIREBASE_PROJECT_ID__",
             storageBucket: "__FIREBASE_STORAGE_BUCKET__",
