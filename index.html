@@ -11,7 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-firestore-compat.min.js"></script>
     
     <style>
-        /* Estilos (mantive o design moderno e responsivo do seu exemplo) */
+        /* Estilos (sem grandes alterações, apenas para o novo botão) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -39,7 +39,7 @@
         }
         .content {
             display: grid;
-            grid-template-columns: 1fr 2fr; /* Mais espaço para o mapa */
+            grid-template-columns: 1fr 2fr;
             min-height: 600px;
         }
         .form-section {
@@ -70,6 +70,26 @@
             border-color: #ff8c00;
             box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.1);
         }
+        /* Estilo para o campo de busca de endereço */
+        .address-search-group {
+            display: flex;
+            gap: 10px;
+        }
+        .address-search-group input {
+            flex-grow: 1;
+        }
+        .search-btn {
+            padding: 0 20px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .search-btn:hover {
+            background: #5a6268;
+        }
         .submit-btn {
             background: linear-gradient(135deg, #ff8c00 0%, #ffc107 100%);
             color: white;
@@ -81,10 +101,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
-        .submit-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
+        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         #map { height: 100%; min-height: 600px; }
         .status-message {
             margin-top: 20px; padding: 15px; border-radius: 12px; font-weight: 600; text-align: center;
@@ -93,22 +110,10 @@
         .status-message.show { opacity: 1; }
         .status-message.success { background-color: #28a745; color: white; }
         .status-message.error { background-color: #dc3545; color: white; }
-        
-        /* Estilo para os popups do mapa */
-        .leaflet-popup-content-wrapper {
-            border-radius: 8px;
-        }
-        .leaflet-popup-content {
-            font-size: 14px;
-        }
-        .leaflet-popup-content h4 {
-            margin: 0 0 10px;
-            color: #ff8c00;
-        }
-        .leaflet-popup-content p {
-            margin: 5px 0;
-        }
-
+        .leaflet-popup-content-wrapper { border-radius: 8px; }
+        .leaflet-popup-content { font-size: 14px; }
+        .leaflet-popup-content h4 { margin: 0 0 10px; color: #ff8c00; }
+        .leaflet-popup-content p { margin: 5px 0; }
         @media (max-width: 860px) {
             .content { grid-template-columns: 1fr; }
             .form-section { border-right: none; border-bottom: 1px solid #eee; }
@@ -124,8 +129,19 @@
         <div class="content">
             <div class="form-section">
                 <h3>Reportar um Problema</h3>
-                <p style="margin-bottom: 20px; color: #666;">Clique no mapa para selecionar o local exato.</p>
+                <p style="margin-bottom: 20px; color: #666;">
+                    Digite o endereço ou clique no mapa para selecionar o local.
+                </p>
                 <form id="reportForm">
+                    
+                    <div class="form-group">
+                        <label for="address">🔎 Endereço:</label>
+                        <div class="address-search-group">
+                            <input type="text" id="address" placeholder="Ex: Av. Paulista, 1578, São Paulo">
+                            <button type="button" id="searchBtn" class="search-btn">Buscar</button>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label for="problemType">⚡ Tipo de Problema:</label>
                         <select id="problemType" name="problemType" required>
@@ -144,7 +160,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>📍 Localização (Preenchida pelo mapa):</label>
+                        <label>📍 Coordenadas (Preenchidas automaticamente):</label>
                         <input type="text" id="latitude" name="latitude" placeholder="Latitude" readonly required>
                         <input type="text" id="longitude" name="longitude" placeholder="Longitude" readonly required style="margin-top: 10px;">
                     </div>
@@ -175,89 +191,106 @@
             messagingSenderId: "SEU_MESSAGING_SENDER_ID",
             appId: "SEU_APP_ID"
         };
-
         let db;
         try {
             firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
-            console.log('Firebase inicializado com sucesso');
         } catch (error) {
             console.error('Erro ao inicializar Firebase:', error);
             showStatus('Erro crítico: A configuração do Firebase é inválida.', 'error');
         }
 
         // 2. INICIALIZAÇÃO DO MAPA
-        const map = L.map('map').setView([-23.5505, -46.6333], 12); // Centro em SP
+        const map = L.map('map').setView([-14.2350, -51.9253], 4); // Centro no Brasil
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        let selectionMarker = null;
-        const outageMarkersLayer = L.layerGroup().addTo(map); // Camada para os marcadores de problemas
-
-        // Ícone vermelho para problemas reportados
+        let currentMarker = null;
+        const outageMarkersLayer = L.layerGroup().addTo(map);
         const outageIcon = new L.Icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
             shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowSize: [41, 41]
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
         });
 
-        // 3. CARREGAR E EXIBIR OS PONTOS DO FIREBASE (EM TEMPO REAL)
+        // 3. CARREGAR PONTOS DO FIREBASE
         function fetchAndDisplayOutages() {
             if (!db) return;
-            
             db.collection('outages').onSnapshot(snapshot => {
-                outageMarkersLayer.clearLayers(); // Limpa os marcadores antigos para não duplicar
-                
+                outageMarkersLayer.clearLayers();
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    const marker = L.marker([data.latitude, data.longitude], { icon: outageIcon })
-                        .addTo(outageMarkersLayer);
-                    
-                    // Adiciona um popup com as informações
-                    const popupContent = `
-                        <h4>${data.problemType}</h4>
-                        <p><strong>Descrição:</strong> ${data.description || 'Nenhuma'}</p>
-                        <p><strong>Reportado em:</strong> ${data.timestamp.toDate().toLocaleString('pt-BR')}</p>
-                    `;
+                    const marker = L.marker([data.latitude, data.longitude], { icon: outageIcon }).addTo(outageMarkersLayer);
+                    const popupContent = `<h4>${data.problemType}</h4><p><strong>Descrição:</strong> ${data.description || 'Nenhuma'}</p><p><strong>Reportado em:</strong> ${data.timestamp.toDate().toLocaleString('pt-BR')}</p>`;
                     marker.bindPopup(popupContent);
                 });
-                console.log('Marcadores de problemas atualizados.');
             }, error => {
                 console.error("Erro ao buscar dados: ", error);
-                showStatus('Não foi possível carregar os pontos.', 'error');
             });
         }
 
-        // 4. LÓGICA DE INTERAÇÃO COM O MAPA E FORMULÁRIO
-        map.on('click', function(e) {
-            const { lat, lng } = e.latlng;
-
-            // Remove o marcador de seleção anterior
-            if (selectionMarker) {
-                map.removeLayer(selectionMarker);
+        // 4. FUNÇÃO PARA ADICIONAR/ATUALIZAR MARCADOR DE SELEÇÃO
+        function updateSelectionMarker(lat, lng) {
+            if (currentMarker) {
+                map.removeLayer(currentMarker);
             }
-            // Adiciona um novo marcador de seleção (azul)
-            selectionMarker = L.marker([lat, lng]).addTo(map);
-            
-            // Preenche o formulário
+            currentMarker = L.marker([lat, lng]).addTo(map);
             document.getElementById('latitude').value = lat.toFixed(6);
             document.getElementById('longitude').value = lng.toFixed(6);
+        }
+
+        // 5. // NOVO: FUNÇÃO PARA BUSCAR ENDEREÇO (GEOCODING)
+        async function geocodeAddress() {
+            const address = document.getElementById('address').value;
+            if (!address) {
+                showStatus('Por favor, digite um endereço para buscar.', 'error');
+                return;
+            }
+
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data && data.length > 0) {
+                    const { lat, lon } = data[0];
+                    const latitude = parseFloat(lat);
+                    const longitude = parseFloat(lon);
+
+                    map.setView([latitude, longitude], 16); // Centraliza o mapa no endereço
+                    updateSelectionMarker(latitude, longitude); // Adiciona o marcador
+                } else {
+                    showStatus('Endereço não encontrado. Tente ser mais específico ou clique no mapa.', 'error');
+                }
+            } catch (error) {
+                console.error('Erro de Geocoding:', error);
+                showStatus('Ocorreu um erro ao buscar o endereço.', 'error');
+            }
+        }
+
+        // 6. EVENT LISTENERS
+        map.on('click', (e) => updateSelectionMarker(e.latlng.lat, e.latlng.lng));
+
+        // NOVO: Listener para o botão de busca
+        document.getElementById('searchBtn').addEventListener('click', geocodeAddress);
+        // NOVO: Listener para a tecla "Enter" no campo de endereço
+        document.getElementById('address').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Impede o envio do formulário
+                geocodeAddress();
+            }
         });
 
         document.getElementById('reportForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const submitBtn = document.getElementById('submitBtn');
-
-            // Validação dos dados
             const problemType = document.getElementById('problemType').value;
             const latitude = document.getElementById('latitude').value;
             
             if (!problemType || !latitude) {
-                showStatus('Selecione o tipo de problema e clique no mapa para definir o local.', 'error');
+                showStatus('Selecione o tipo de problema e um local no mapa.', 'error');
                 return;
             }
 
@@ -269,24 +302,18 @@
                 description: document.getElementById('description').value.trim(),
                 latitude: parseFloat(latitude),
                 longitude: parseFloat(document.getElementById('longitude').value),
-                timestamp: firebase.firestore.FieldValue.serverTimestamp() // Pega a hora do servidor
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             try {
-                if (!db) throw new Error('Firebase não conectado.');
-                
                 await db.collection('outages').add(reportData);
                 showStatus('Problema reportado com sucesso!', 'success');
-                
-                // Limpa o formulário
                 document.getElementById('reportForm').reset();
-                if (selectionMarker) {
-                    map.removeLayer(selectionMarker);
-                    selectionMarker = null;
+                if (currentMarker) {
+                    map.removeLayer(currentMarker);
+                    currentMarker = null;
                 }
-
             } catch (error) {
-                console.error('Erro ao salvar no Firebase:', error);
                 showStatus('Erro ao enviar o reporte. Tente novamente.', 'error');
             } finally {
                 submitBtn.disabled = false;
@@ -294,7 +321,6 @@
             }
         });
 
-        // Função para mostrar mensagens de status
         function showStatus(message, type) {
             const statusEl = document.getElementById('statusMessage');
             statusEl.textContent = message;
@@ -302,9 +328,8 @@
             setTimeout(() => statusEl.classList.remove('show'), 5000);
         }
 
-        // Iniciar o carregamento dos pontos assim que a página carregar
+        // Iniciar
         fetchAndDisplayOutages();
-
     </script>
 </body>
 </html>
