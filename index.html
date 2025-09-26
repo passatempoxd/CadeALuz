@@ -26,10 +26,9 @@
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        /* ALTERAÇÃO 1: Garante que o HTML e o Body ocupem 100% da altura */
         html, body {
             height: 100%;
-            overflow: hidden; /* Impede a rolagem do corpo da página */
+            overflow: hidden;
         }
 
         body {
@@ -45,8 +44,7 @@
         
         .container {
             width: 100%;
-            max-width: 1600px; /* Aumentado para telas maiores */
-            /* ALTERAÇÃO 2: Container ocupa 100% da altura disponível, com um limite */
+            max-width: 1600px;
             height: 100%;
             max-height: 95vh;
             margin: 0 auto;
@@ -62,44 +60,48 @@
         .header {
             background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
             color: white;
-            padding: 25px 30px; /* Padding vertical reduzido */
+            /* AJUSTE: Padding vertical do cabeçalho reduzido */
+            padding: 20px 30px; 
             text-align: center;
         }
         .header h1 {
-            font-size: 2.2rem; /* Tamanho da fonte do título reduzido */
+            /* AJUSTE: Fonte do título levemente reduzida */
+            font-size: 2.1rem; 
             font-weight: 700;
             text-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
         }
         
         .content { 
             display: grid;
-            grid-template-columns: minmax(380px, 1fr) 2.5fr; /* Proporção ajustada */
+            grid-template-columns: minmax(380px, 1fr) 2.5fr;
             flex-grow: 1;
-            /* Impede que o conteúdo vaze */
             overflow: hidden;
         }
         
         .form-section {
-            padding: 25px 30px; /* Padding reduzido */
+            /* AJUSTE: Padding vertical da seção do formulário reduzido */
+            padding: 20px 30px; 
             display: flex;
             flex-direction: column;
             justify-content: center;
-            overflow-y: auto; /* Permite rolagem SÓ no formulário se for estritamente necessário */
+            overflow-y: auto;
         }
         
         .form-section h3 { font-size: 1.4rem; color: white; font-weight: 600; margin-bottom: 10px; text-align: left; }
-        .form-section p { color: var(--text-muted); margin-bottom: 20px; text-align: left; }
+        .form-section p { color: var(--text-muted); margin-bottom: 15px; text-align: left; font-size: 0.9rem; }
         
-        /* ALTERAÇÃO 3: Espaçamento entre os campos do formulário reduzido */
-        .form-group { margin-bottom: 15px; } 
-        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: var(--text-light); }
+        /* AJUSTE: Espaçamento entre os campos reduzido */
+        .form-group { margin-bottom: 12px; } 
+        /* AJUSTE: Espaçamento da label reduzido */
+        .form-group label { display: block; margin-bottom: 4px; font-weight: 500; color: var(--text-light); font-size: 0.9rem; }
         
         .form-group input, .form-group textarea, .form-group select {
             width: 100%;
-            padding: 12px 15px; /* Padding vertical reduzido */
+            /* AJUSTE: Altura dos campos de texto reduzida */
+            padding: 10px 15px; 
             border: 1px solid var(--border-color);
-            border-radius: 10px;
-            font-size: 0.95rem; /* Fonte levemente reduzida */
+            border-radius: 8px;
+            font-size: 0.9rem; 
             font-family: 'Poppins', sans-serif;
             transition: all 0.3s ease;
             background: var(--input-dark);
@@ -131,10 +133,11 @@
         .submit-btn {
             background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
             color: white;
-            padding: 15px 40px;
-            font-size: 1.1rem;
+            padding: 14px 40px;
+            font-size: 1rem;
             box-shadow: 0 5px 15px rgba(142, 45, 226, 0.3);
-            margin-top: 10px;
+            /* AJUSTE: Margem do botão de envio reduzida */
+            margin-top: 5px; 
         }
         .submit-btn:hover {
             transform: translateY(-2px);
@@ -159,8 +162,9 @@
         .status-message.error { background: #dc3545; color: white; }
 
         @media (max-width: 1200px) {
+            html, body { height: auto; overflow: auto; }
             body { padding: 0; }
-            .container { border-radius: 0; height: 100%; max-height: none; }
+            .container { border-radius: 0; height: auto; max-height: none; }
             .content { grid-template-columns: 1fr; }
             .form-section { border-right: none; border-bottom: 1px solid var(--border-color); padding: 30px 20px; }
         }
