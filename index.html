@@ -164,12 +164,11 @@
         .resolve-btn { width: 100%; padding: 8px; margin-top: 10px; background-color: #28a745; color: white; }
         .resolve-btn:hover { background-color: #218838; }
         
-        /* --- ESTILO DA MENSAGEM DE STATUS COMPLETAMENTE REFEITO --- */
         .status-message { 
             position: absolute;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -40%); /* Posição inicial um pouco acima */
+            transform: translate(-50%, -40%);
             background: rgba(31, 31, 58, 0.9);
             color: white;
             padding: 15px 30px;
@@ -177,18 +176,18 @@
             font-weight: 600;
             text-align: center;
             box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-            z-index: 2000; /* Garante que fique sobre tudo */
+            z-index: 2000;
             backdrop-filter: blur(5px);
             border: 1px solid var(--border-color);
             opacity: 0;
             visibility: hidden;
             transition: all 0.4s ease;
-            white-space: nowrap; /* Impede que a mensagem quebre a linha */
+            white-space: nowrap;
         }
         .status-message.show { 
             opacity: 1;
             visibility: visible;
-            transform: translate(-50%, -50%); /* Posição final perfeitamente centralizada */
+            transform: translate(-50%, -50%);
         }
         .status-message.success { background: rgba(40, 167, 69, 0.9); }
         .status-message.error { background: rgba(220, 53, 69, 0.9); }
@@ -223,6 +222,20 @@
             margin: 0;
             padding: 0;
             opacity: 0.6;
+        }
+
+        /* --- NOVO ESTILO PARA O BOTÃO DE LOCALIZAÇÃO --- */
+        .leaflet-control-locate a {
+            background-color: var(--input-dark);
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="%23e0e0e0"><path d="M16 0 A16 16 0 0 0 0 16 A16 16 0 0 0 16 32 A16 16 0 0 0 32 16 A16 16 0 0 0 16 0 M16 4 A12 12 0 0 1 28 16 A12 12 0 0 1 16 28 A12 12 0 0 1 4 16 A12 12 0 0 1 16 4 M16 10 A6 6 0 0 0 10 16 A6 6 0 0 0 16 22 A6 6 0 0 0 22 16 A6 6 0 0 0 16 10"/></svg>');
+            background-size: 20px 20px;
+            background-repeat: no-repeat;
+            background-position: center;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+        .leaflet-control-locate a:hover {
+            background-color: var(--container-dark);
         }
 
         @media (max-width: 1200px) {
@@ -403,6 +416,53 @@
             document.getElementById('latitude').value = lat.toFixed(6);
             document.getElementById('longitude').value = lng.toFixed(6);
         }
+
+        // --- NOVA FUNÇÃO DE GEOLOCALIZAÇÃO ---
+        function locateUser() {
+            if (!navigator.geolocation) {
+                showStatus('Geolocalização não é suportada pelo seu navegador.', 'error');
+                return;
+            }
+
+            showStatus('Buscando sua localização...', 'success');
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    map.setView([lat, lng], 16);
+                    updateSelectionMarker(lat, lng);
+                    showStatus('Localização encontrada!', 'success');
+                },
+                (error) => {
+                    let message = 'Não foi possível obter sua localização.';
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            message = 'Você negou o pedido de Geolocalização.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            message = 'Informação de localização não está disponível.';
+                            break;
+                        case error.TIMEOUT:
+                            message = 'O pedido de geolocalização expirou.';
+                            break;
+                    }
+                    showStatus(message, 'error');
+                }
+            );
+        }
+
+        // --- NOVO CONTROLE DE LOCALIZAÇÃO NO MAPA ---
+        const LocateControl = L.Control.extend({
+            onAdd: function(map) {
+                const btn = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-locate');
+                btn.innerHTML = `<a href="#" title="Minha Localização"></a>`;
+                L.DomEvent.on(btn, 'click', L.DomEvent.stop).on(btn, 'click', locateUser);
+                return btn;
+            }
+        });
+        new LocateControl({ position: 'topleft' }).addTo(map);
+
 
         async function geocodeAddress() {
             const userInput = document.getElementById('address').value.trim();
