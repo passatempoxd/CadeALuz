@@ -252,7 +252,7 @@
                     <div class="form-group">
                         <label for="address">🔎 Endereço:</label>
                         <div class="address-search-group">
-                            <input type="text" id="address" placeholder="Ex: Av. Inocêncio Seráfico, Carapicuíba">
+                            <input type="text" id="address" placeholder="Rua, Número, Cidade ou CEP">
                             <button type="button" id="searchBtn" class="search-btn">Buscar</button>
                         </div>
                     </div>
@@ -275,10 +275,8 @@
                         <label for="description">📝 Descrição (Opcional):</label>
                         <textarea id="description" name="description" placeholder="Ex: A rua inteira está sem luz desde as 10h."></textarea>
                     </div>
-                    
                     <input type="hidden" id="latitude" name="latitude" required>
                     <input type="hidden" id="longitude" name="longitude" required>
-
                     <button type="submit" class="submit-btn" id="submitBtn">Reportar Problema</button>
                     <div id="statusMessage" class="status-message"></div>
                 </form>
@@ -305,7 +303,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     
     <script>
-        // O JavaScript permanece o mesmo
         const firebaseConfig = {
             apiKey: "__FIREBASE_API_KEY__",
             authDomain: "__FIREBASE_AUTH_DOMAIN__",
@@ -406,19 +403,28 @@
             document.getElementById('longitude').value = lng.toFixed(6);
         }
 
+        // --- FUNÇÃO DE BUSCA DE ENDEREÇO APRIMORADA ---
         async function geocodeAddress() {
             const address = document.getElementById('address').value;
             if (!address) { showStatus('Por favor, digite um endereço para buscar.', 'error'); return; }
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
+            
+            // Caixa geográfica para a Grande São Paulo
+            const viewbox = '-47.2,-24.0,-46.0,-23.2';
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&countrycodes=br&viewbox=${viewbox}&bounded=1`;
+            
             try {
                 const response = await fetch(url);
                 const data = await response.json();
                 if (data && data.length > 0) {
                     const { lat, lon } = data[0];
-                    map.setView([lat, lon], 16);
+                    map.setView([parseFloat(lat), parseFloat(lon)], 16);
                     updateSelectionMarker(parseFloat(lat), parseFloat(lon));
-                } else { showStatus('Endereço não encontrado.', 'error'); }
-            } catch (error) { showStatus('Ocorreu um erro ao buscar o endereço.', 'error'); }
+                } else {
+                    showStatus('Endereço não encontrado na região. Tente ser mais específico.', 'error');
+                }
+            } catch (error) {
+                showStatus('Ocorreu um erro ao buscar o endereço.', 'error');
+            }
         }
 
         document.getElementById('reportForm').addEventListener('submit', async function(e) {
