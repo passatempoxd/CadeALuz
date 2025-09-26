@@ -28,7 +28,7 @@
         
         html, body {
             height: 100%;
-            overflow: hidden; 
+            overflow: hidden;
         }
 
         body {
@@ -62,7 +62,6 @@
             color: white;
             padding: 20px 30px; 
             text-align: center;
-            flex-shrink: 0; /* Impede que o header encolha */
         }
         .header h1 {
             font-size: 2.1rem; 
@@ -92,7 +91,7 @@
             overflow-y: auto; 
             display: flex;
             flex-direction: column;
-            padding-right: 10px; /* Espaço para a barra de rolagem */
+            padding-right: 10px;
         }
         
         .form-group { margin-bottom: 12px; } 
@@ -168,23 +167,21 @@
         .status-message.success { background: #28a745; color: white; }
         .status-message.error { background: #dc3545; color: white; }
 
-        /* --- REGRAS CORRIGIDAS PARA CELULAR --- */
         @media (max-width: 1200px) {
             html, body {
-                height: auto;       /* Devolve a altura automática */
-                overflow: auto;   /* Devolve a rolagem normal */
+                height: auto;
+                overflow: auto;
             }
             body { padding: 0; }
             .container {
-                height: auto;       /* Devolve a altura automática */
+                height: auto;
                 max-height: none;
                 border-radius: 0;
-                flex-direction: column;
-                display: block;    /* Desfaz o flexbox do desktop */
+                display: block;
             }
             .content {
-                grid-template-columns: 1fr; /* Muda para coluna única */
-                overflow: visible;  /* ESSENCIAL: Impede que o mapa seja cortado */
+                grid-template-columns: 1fr;
+                overflow: visible;
             }
             .form-section { 
                 border-right: none; 
@@ -198,7 +195,6 @@
                 overflow-y: visible; 
             }
             #map {
-                /* Garante que o mapa tenha uma altura mínima visível no celular */
                 min-height: 500px;
             }
         }
@@ -206,7 +202,9 @@
 </head>
 <body>
     <div class="container">
-        <div class="header"><h1>💡 Cadê a Luz?</h1></div>
+        <div class="header">
+            <h1>💡 Cadê a Luz?</h1>
+        </div>
         <div class="content">
             <div class="form-section">
                 <h3>Reportar um Problema</h3>
@@ -384,7 +382,9 @@
             }
         });
 
-        map.on('click', (e) => updateSelectionMarker(e.latlng.lat, e.lng));
+        // LINHA CORRIGIDA
+        map.on('click', (e) => updateSelectionMarker(e.latlng.lat, e.latlng.lng));
+
         document.getElementById('searchBtn').addEventListener('click', geocodeAddress);
         document.getElementById('address').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') { e.preventDefault(); geocodeAddress(); }
