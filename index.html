@@ -14,20 +14,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        /* --- ESTILOS VISUAIS DE VOLTA PARA A VERSÃO NOTURNA --- */
         :root {
             --bg-dark: #1a1a2e;
             --container-dark: #1f1f3a;
-            --input-dark: #2c2c4c;
+            /* COR ALTERADA PARA UM TOM MAIS CLARO */
+            --input-dark: #3a3a5a;
             --primary-accent: #8e2de2;
             --secondary-accent: #4a00e0;
             --text-light: #e0e0e0;
             --text-muted: #a0a0a0;
             --border-color: #40405c;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
         body {
             font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--bg-dark);
@@ -38,7 +36,6 @@
             align-items: center;
             justify-content: center;
         }
-        
         .container {
             width: 100%;
             max-width: 1200px;
@@ -49,39 +46,32 @@
             overflow: hidden;
             border: 1px solid var(--border-color);
         }
-        
         .header {
             background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
             color: white;
             padding: 40px 30px;
             text-align: center;
         }
-        
         .header h1 {
             font-size: 2.8rem;
             font-weight: 700;
             text-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
         }
-        
         .content { display: grid; grid-template-columns: 1fr 2fr; min-height: 600px; }
-        
         .form-section {
             padding: 40px;
             display: flex;
             flex-direction: column;
             justify-content: center;
         }
-        
         .form-section h3, .form-section p {
             text-align: center;
             margin-bottom: 20px;
         }
         .form-section h3 { font-size: 1.5rem; color: white; font-weight: 600; }
         .form-section p { color: var(--text-muted); }
-        
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-light); }
-        
         .form-group input, .form-group textarea, .form-group select {
             width: 100%;
             padding: 15px;
@@ -94,17 +84,14 @@
             color: var(--text-light);
         }
         .form-group input::placeholder, .form-group textarea::placeholder { color: var(--text-muted); }
-        
         .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
             outline: none;
             border-color: var(--primary-accent);
             box-shadow: 0 0 15px rgba(142, 45, 226, 0.4);
             background: var(--container-dark);
         }
-        
         .address-search-group { display: flex; gap: 10px; }
         .address-search-group input { flex-grow: 1; }
-        
         .search-btn, .submit-btn, .resolve-btn {
             border: none;
             border-radius: 10px;
@@ -113,14 +100,12 @@
             font-family: 'Poppins', sans-serif;
             font-weight: 600;
         }
-
         .search-btn {
             padding: 0 20px;
             background: #444;
             color: var(--text-light);
         }
         .search-btn:hover { background: #555; }
-        
         .submit-btn {
             background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
             color: white;
@@ -133,9 +118,7 @@
             box-shadow: 0 8px 20px rgba(142, 45, 226, 0.5);
         }
         .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
-        
         #map { height: 100%; min-height: 600px; }
-        
         .leaflet-popup-content-wrapper, .leaflet-popup-tip {
             background: var(--container-dark);
             color: var(--text-light);
@@ -146,7 +129,6 @@
         .leaflet-popup-content p { margin: 5px 0; color: var(--text-muted); }
         .leaflet-popup-content p strong { color: var(--text-light); }
         .leaflet-container a.leaflet-popup-close-button { color: var(--text-light); }
-        
         .resolve-btn {
             width: 100%;
             padding: 8px;
@@ -155,12 +137,10 @@
             color: white;
         }
         .resolve-btn:hover { background-color: #218838; }
-        
         .status-message { margin-top: 20px; padding: 15px; border-radius: 12px; font-weight: 600; text-align: center; opacity: 0; transition: all 0.3s ease; }
         .status-message.show { opacity: 1; }
         .status-message.success { background: #28a745; color: white; }
         .status-message.error { background: #dc3545; color: white; }
-
         @media (max-width: 860px) {
             body { padding: 0; }
             .container { border-radius: 0; }
@@ -240,8 +220,6 @@
         }
 
         const map = L.map('map').setView([-23.5244, -46.8354], 14);
-        
-        // MAPA MANTIDO NA VERSÃO CLARA, CONFORME SOLICITADO
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             maxZoom: 19
