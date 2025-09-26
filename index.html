@@ -60,15 +60,13 @@
         .header {
             background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
             color: white;
-            padding: 25px 30px;
+            padding: 20px 30px; 
             text-align: center;
-            transition: all 0.2s ease-in-out;
         }
         .header h1 {
-            font-size: 2.2rem;
+            font-size: 2.1rem; 
             font-weight: 700;
             text-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
-            transition: all 0.2s ease-in-out;
         }
         
         .content { 
@@ -78,32 +76,44 @@
             overflow: hidden;
         }
         
+        /* ALTERAÇÃO ESTRUTURAL 1: A seção do formulário agora é um contêiner flexível */
         .form-section {
-            padding: 25px 30px; 
+            padding: 20px 30px; 
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            overflow-y: auto;
-            transition: all 0.2s ease-in-out;
+            overflow: hidden; /* Garante que nada vaze */
         }
         
-        .form-section h3 { font-size: 1.4rem; color: white; font-weight: 600; margin-bottom: 10px; text-align: left; transition: all 0.2s ease-in-out; }
-        .form-section p { color: var(--text-muted); margin-bottom: 20px; text-align: left; font-size: 0.9rem; transition: all 0.2s ease-in-out; }
+        .form-section h3 { font-size: 1.4rem; color: white; font-weight: 600; margin-bottom: 10px; text-align: left; flex-shrink: 0; }
+        .form-section p { color: var(--text-muted); margin-bottom: 15px; text-align: left; font-size: 0.9rem; flex-shrink: 0; }
         
-        .form-group { margin-bottom: 15px; transition: all 0.2s ease-in-out; } 
-        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: var(--text-light); font-size: 0.9rem; transition: all 0.2s ease-in-out; }
+        /* ALTERAÇÃO ESTRUTURAL 2: O formulário em si agora cresce e tem rolagem interna */
+        #reportForm {
+            flex-grow: 1;
+            overflow-y: auto; /* Apenas o formulário rola, se necessário */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group { margin-bottom: 12px; } 
+        .form-group label { display: block; margin-bottom: 4px; font-weight: 500; color: var(--text-light); font-size: 0.9rem; }
         
         .form-group input, .form-group textarea, .form-group select {
             width: 100%;
-            padding: 12px 15px;
+            padding: 10px 15px; 
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            font-size: 0.95rem; 
+            font-size: 0.9rem; 
             font-family: 'Poppins', sans-serif;
             transition: all 0.3s ease;
             background: var(--input-dark);
             color: var(--text-light);
         }
+
+        .form-group textarea {
+             min-height: 80px; /* Uma altura mínima para a descrição */
+        }
+        
         .form-group input::placeholder, .form-group textarea::placeholder { color: var(--text-muted); }
         .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
             outline: none;
@@ -130,10 +140,11 @@
         .submit-btn {
             background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
             color: white;
-            padding: 15px 40px;
-            font-size: 1.1rem;
+            padding: 14px 40px;
+            font-size: 1rem;
             box-shadow: 0 5px 15px rgba(142, 45, 226, 0.3);
-            margin-top: 10px;
+            margin-top: auto; /* ALTERAÇÃO ESTRUTURAL 3: Empurra o botão para o final */
+            flex-shrink: 0; /* Impede que o botão encolha */
         }
         .submit-btn:hover {
             transform: translateY(-2px);
@@ -152,7 +163,7 @@
         .leaflet-container a.leaflet-popup-close-button { color: var(--text-light); }
         .resolve-btn { width: 100%; padding: 8px; margin-top: 10px; background-color: #28a745; color: white; }
         .resolve-btn:hover { background-color: #218838; }
-        .status-message { margin-top: 15px; padding: 12px; border-radius: 10px; font-weight: 600; text-align: center; opacity: 0; transition: all 0.3s ease; font-size: 0.95rem;}
+        .status-message { margin-top: 10px; padding: 12px; border-radius: 10px; font-weight: 600; text-align: center; opacity: 0; transition: all 0.3s ease; font-size: 0.95rem;}
         .status-message.show { opacity: 1; }
         .status-message.success { background: #28a745; color: white; }
         .status-message.error { background: #dc3545; color: white; }
@@ -163,21 +174,7 @@
             .container { border-radius: 0; height: auto; max-height: none; }
             .content { grid-template-columns: 1fr; }
             .form-section { border-right: none; border-bottom: 1px solid var(--border-color); padding: 30px 20px; }
-        }
-
-        /* AJUSTE FINO E AGRESSIVO PARA MONITORES LARGOS E BAIXOS (EX: 1600x900) */
-        @media (max-height: 900px) and (min-width: 1201px) {
-            .header { padding: 12px 30px; }
-            .header h1 { font-size: 1.8rem; }
-            .form-section { padding: 15px 25px; }
-            .form-section h3 { font-size: 1.2rem; margin-bottom: 8px; }
-            .form-section p { font-size: 0.8rem; margin-bottom: 12px; }
-            .form-group { margin-bottom: 9px; }
-            .form-group label { font-size: 0.8rem; margin-bottom: 3px; }
-            .form-group input, .form-group textarea, .form-group select { padding: 8px 12px; font-size: 0.9rem; }
-            .form-group textarea { min-height: 60px; /* Garante uma altura mínima para a descrição */ }
-            .submit-btn { padding: 12px 30px; font-size: 1rem; margin-top: 5px; }
-            .status-message { margin-top: 10px; }
+            #reportForm { overflow-y: visible; }
         }
     </style>
 </head>
