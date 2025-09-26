@@ -26,12 +26,17 @@
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
+        /* ALTERAÇÃO 1: Garante que o HTML e o Body ocupem 100% da altura */
+        html, body {
+            height: 100%;
+            overflow: hidden; /* Impede a rolagem do corpo da página */
+        }
+
         body {
             font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--bg-dark);
             color: var(--text-light);
-            min-height: 100vh;
-            padding: clamp(1rem, 4vw, 2.5rem); 
+            padding: 20px; 
             display: flex;
             align-items: center;
             justify-content: center;
@@ -40,7 +45,10 @@
         
         .container {
             width: 100%;
-            max-width: 1400px; 
+            max-width: 1600px; /* Aumentado para telas maiores */
+            /* ALTERAÇÃO 2: Container ocupa 100% da altura disponível, com um limite */
+            height: 100%;
+            max-height: 95vh;
             margin: 0 auto;
             background: var(--container-dark);
             border-radius: 20px;
@@ -54,41 +62,44 @@
         .header {
             background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
             color: white;
-            padding: 40px 30px;
+            padding: 25px 30px; /* Padding vertical reduzido */
             text-align: center;
         }
         .header h1 {
-            font-size: 2.8rem;
+            font-size: 2.2rem; /* Tamanho da fonte do título reduzido */
             font-weight: 700;
             text-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
         }
         
         .content { 
             display: grid;
-            grid-template-columns: minmax(350px, 1fr) 2fr; 
+            grid-template-columns: minmax(380px, 1fr) 2.5fr; /* Proporção ajustada */
             flex-grow: 1;
+            /* Impede que o conteúdo vaze */
+            overflow: hidden;
         }
         
         .form-section {
-            padding: 40px;
+            padding: 25px 30px; /* Padding reduzido */
             display: flex;
             flex-direction: column;
             justify-content: center;
-            overflow-y: auto;
+            overflow-y: auto; /* Permite rolagem SÓ no formulário se for estritamente necessário */
         }
         
-        .form-section h3, .form-section p { text-align: center; margin-bottom: 20px; }
-        .form-section h3 { font-size: 1.5rem; color: white; font-weight: 600; }
-        .form-section p { color: var(--text-muted); }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-light); }
+        .form-section h3 { font-size: 1.4rem; color: white; font-weight: 600; margin-bottom: 10px; text-align: left; }
+        .form-section p { color: var(--text-muted); margin-bottom: 20px; text-align: left; }
+        
+        /* ALTERAÇÃO 3: Espaçamento entre os campos do formulário reduzido */
+        .form-group { margin-bottom: 15px; } 
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: var(--text-light); }
         
         .form-group input, .form-group textarea, .form-group select {
             width: 100%;
-            padding: 15px;
+            padding: 12px 15px; /* Padding vertical reduzido */
             border: 1px solid var(--border-color);
             border-radius: 10px;
-            font-size: 1rem;
+            font-size: 0.95rem; /* Fonte levemente reduzida */
             font-family: 'Poppins', sans-serif;
             transition: all 0.3s ease;
             background: var(--input-dark);
@@ -123,6 +134,7 @@
             padding: 15px 40px;
             font-size: 1.1rem;
             box-shadow: 0 5px 15px rgba(142, 45, 226, 0.3);
+            margin-top: 10px;
         }
         .submit-btn:hover {
             transform: translateY(-2px);
@@ -130,37 +142,25 @@
         }
         .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
         
-        #map { width: 100%; height: 100%; min-height: 600px; }
+        .map-section { height: 100%; }
+        #map { width: 100%; height: 100%; }
         
-        .leaflet-popup-content-wrapper, .leaflet-popup-tip {
-            background: var(--container-dark);
-            color: var(--text-light);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
-        }
+        .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--container-dark); color: var(--text-light); box-shadow: 0 5px 15px rgba(0,0,0,0.4); }
         .leaflet-popup-content { font-size: 14px; margin: 15px; }
         .leaflet-popup-content h4 { margin: 0 0 10px; color: white; font-weight: 600; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
         .leaflet-popup-content p { margin: 5px 0; color: var(--text-muted); }
         .leaflet-popup-content p strong { color: var(--text-light); }
         .leaflet-container a.leaflet-popup-close-button { color: var(--text-light); }
-        
-        .resolve-btn {
-            width: 100%;
-            padding: 8px;
-            margin-top: 10px;
-            background-color: #28a745;
-            color: white;
-        }
+        .resolve-btn { width: 100%; padding: 8px; margin-top: 10px; background-color: #28a745; color: white; }
         .resolve-btn:hover { background-color: #218838; }
-        
-        .status-message { margin-top: 20px; padding: 15px; border-radius: 12px; font-weight: 600; text-align: center; opacity: 0; transition: all 0.3s ease; }
+        .status-message { margin-top: 15px; padding: 12px; border-radius: 10px; font-weight: 600; text-align: center; opacity: 0; transition: all 0.3s ease; font-size: 0.95rem;}
         .status-message.show { opacity: 1; }
         .status-message.success { background: #28a745; color: white; }
         .status-message.error { background: #dc3545; color: white; }
 
-        /* ALTERAÇÃO PRINCIPAL: Ponto de quebra aumentado para 1200px */
         @media (max-width: 1200px) {
             body { padding: 0; }
-            .container { border-radius: 0; height: 100%; }
+            .container { border-radius: 0; height: 100%; max-height: none; }
             .content { grid-template-columns: 1fr; }
             .form-section { border-right: none; border-bottom: 1px solid var(--border-color); padding: 30px 20px; }
         }
@@ -201,7 +201,7 @@
                         <textarea id="description" name="description" placeholder="Ex: A rua inteira está sem luz desde as 10h."></textarea>
                     </div>
                     <div class="form-group">
-                        <label>📍 Coordenadas (Preenchidas automaticamente):</label>
+                        <label>📍 Coordenadas:</label>
                         <input type="text" id="latitude" name="latitude" placeholder="Latitude" readonly required>
                         <input type="text" id="longitude" name="longitude" placeholder="Longitude" readonly required style="margin-top: 10px;">
                     </div>
@@ -216,7 +216,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     
     <script>
-        // Todo o JavaScript permanece o mesmo
+        // O JavaScript permanece o mesmo
         const firebaseConfig = {
             apiKey: "__FIREBASE_API_KEY__",
             authDomain: "__FIREBASE_AUTH_DOMAIN__",
@@ -346,7 +346,7 @@
             }
         });
 
-        map.on('click', (e) => updateSelectionMarker(e.latlng.lat, e.latlng.lng));
+        map.on('click', (e) => updateSelectionMarker(e.latlng.lat, e.lng));
         document.getElementById('searchBtn').addEventListener('click', geocodeAddress);
         document.getElementById('address').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') { e.preventDefault(); geocodeAddress(); }
