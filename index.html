@@ -163,10 +163,35 @@
         .leaflet-container a.leaflet-popup-close-button { color: var(--text-light); }
         .resolve-btn { width: 100%; padding: 8px; margin-top: 10px; background-color: #28a745; color: white; }
         .resolve-btn:hover { background-color: #218838; }
-        .status-message { margin-top: 10px; padding: 12px; border-radius: 10px; font-weight: 600; text-align: center; opacity: 0; transition: all 0.3s ease; font-size: 0.95rem;}
-        .status-message.show { opacity: 1; }
-        .status-message.success { background: #28a745; color: white; }
-        .status-message.error { background: #dc3545; color: white; }
+        
+        /* --- ESTILO DA MENSAGEM DE STATUS COMPLETAMENTE REFEITO --- */
+        .status-message { 
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -40%); /* Posição inicial um pouco acima */
+            background: rgba(31, 31, 58, 0.9);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            z-index: 2000; /* Garante que fique sobre tudo */
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--border-color);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s ease;
+            white-space: nowrap; /* Impede que a mensagem quebre a linha */
+        }
+        .status-message.show { 
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%); /* Posição final perfeitamente centralizada */
+        }
+        .status-message.success { background: rgba(40, 167, 69, 0.9); }
+        .status-message.error { background: rgba(220, 53, 69, 0.9); }
         
         #map-legend {
             position: absolute;
@@ -201,41 +226,17 @@
         }
 
         @media (max-width: 1200px) {
-            html, body {
-                height: auto;
-                overflow: auto;
-            }
+            html, body { height: auto; overflow: auto; }
             body { padding: 0; }
-            .container {
-                height: auto;
-                max-height: none;
-                border-radius: 0;
-                display: block;
-            }
-            .content {
-                grid-template-columns: 1fr;
-                overflow: visible;
-            }
-            .form-section { 
-                border-right: none; 
-                border-bottom: 1px solid var(--border-color); 
-                padding: 30px 20px;
-                height: auto;
-                overflow: visible;
-            }
-            #reportForm { 
-                height: auto;
-                overflow-y: visible; 
-            }
-            #map {
-                min-height: 500px;
-            }
-            #map-legend {
-                display: none;
-            }
-            .footer {
-                position: relative;
-            }
+            .container { height: auto; max-height: none; border-radius: 0; display: block; }
+            .content { grid-template-columns: 1fr; overflow: visible; }
+            .form-section { border-right: none; border-bottom: 1px solid var(--border-color); padding: 30px 20px; height: auto; overflow: visible; }
+            #reportForm { height: auto; overflow-y: visible; }
+            #map { min-height: 500px; }
+            #map-legend { display: none; }
+            .footer { position: relative; }
+            .status-message { bottom: 30px; top: auto; transform: translate(-50%, 10px); }
+            .status-message.show { transform: translate(-50%, 0); }
         }
     </style>
 </head>
@@ -278,7 +279,6 @@
                     <input type="hidden" id="latitude" name="latitude" required>
                     <input type="hidden" id="longitude" name="longitude" required>
                     <button type="submit" class="submit-btn" id="submitBtn">Reportar Problema</button>
-                    <div id="statusMessage" class="status-message"></div>
                 </form>
             </div>
             <div class="map-section">
@@ -293,6 +293,7 @@
                         <li><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png"> Outro</li>
                     </ul>
                 </div>
+                <div id="statusMessage" class="status-message"></div>
             </div>
         </div>
         <footer class="footer">
@@ -403,41 +404,24 @@
             document.getElementById('longitude').value = lng.toFixed(6);
         }
 
-        // --- FUNÇÃO DE BUSCA DE ENDEREÇO APRIMORADA ---
         async function geocodeAddress() {
             const userInput = document.getElementById('address').value.trim();
-            if (!userInput) {
-                showStatus('Por favor, digite um endereço para buscar.', 'error');
-                return;
-            }
+            if (!userInput) { showStatus('Por favor, digite um endereço para buscar.', 'error'); return; }
 
-            // Regex para detectar um formato de CEP (00000-000 ou 00000000)
             const cepRegex = /^\d{5}-?\d{3}$/;
-            
             let addressToSearch = userInput;
 
             if (cepRegex.test(userInput)) {
-                // Se for um CEP, busca o endereço completo primeiro
                 try {
                     const cep = userInput.replace('-', '');
                     const viaCepResponse = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
                     const cepData = await viaCepResponse.json();
-                    if (cepData.erro) {
-                        showStatus('CEP não encontrado.', 'error');
-                        return;
-                    }
-                    // Monta um endereço completo e preciso para o Nominatim
+                    if (cepData.erro) { showStatus('CEP não encontrado.', 'error'); return; }
                     addressToSearch = `${cepData.logradouro}, ${cepData.localidade}, ${cepData.uf}`;
-                    console.log('Endereço encontrado via CEP:', addressToSearch);
-                } catch (error) {
-                    console.error('Erro ao buscar CEP:', error);
-                    showStatus('Erro ao consultar o CEP. Tente o endereço.', 'error');
-                    return;
-                }
+                } catch (error) { showStatus('Erro ao consultar o CEP. Tente o endereço.', 'error'); return; }
             }
-
-            // Busca as coordenadas no Nominatim (com o endereço completo do CEP ou com o input original)
-            const viewbox = '-47.2,-24.0,-46.0,-23.2'; // Caixa geográfica para a Grande São Paulo
+            
+            const viewbox = '-47.2,-24.0,-46.0,-23.2';
             const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressToSearch)}&countrycodes=br&viewbox=${viewbox}&bounded=1`;
             
             try {
@@ -445,14 +429,10 @@
                 const nominatimData = await nominatimResponse.json();
                 if (nominatimData && nominatimData.length > 0) {
                     const { lat, lon } = nominatimData[0];
-                    map.setView([parseFloat(lat), parseFloat(lon)], 17); // Mais zoom
+                    map.setView([parseFloat(lat), parseFloat(lon)], 17);
                     updateSelectionMarker(parseFloat(lat), parseFloat(lon));
-                } else {
-                    showStatus('Endereço não encontrado na região. Tente ser mais específico.', 'error');
-                }
-            } catch (error) {
-                showStatus('Ocorreu um erro ao buscar o endereço.', 'error');
-            }
+                } else { showStatus('Endereço não encontrado na região. Tente ser mais específico.', 'error'); }
+            } catch (error) { showStatus('Ocorreu um erro ao buscar o endereço.', 'error'); }
         }
 
         document.getElementById('reportForm').addEventListener('submit', async function(e) {
@@ -512,7 +492,9 @@
             const statusEl = document.getElementById('statusMessage');
             statusEl.textContent = message;
             statusEl.className = `status-message ${type} show`;
-            setTimeout(() => statusEl.classList.remove('show'), 5000);
+            setTimeout(() => {
+                statusEl.classList.remove('show');
+            }, 4000);
         }
 
         fetchAndDisplayOutages();
