@@ -185,15 +185,19 @@
         #map-legend ul li { display: flex; align-items: center; margin-bottom: 5px; font-size: 0.85rem; color: var(--text-muted); }
         #map-legend ul li img { width: 12px; height: auto; margin-right: 8px; }
 
-        /* --- ESTILOS PARA O RODAPÉ --- */
+        /* --- ESTILOS DO RODAPÉ ATUALIZADOS --- */
         .footer {
-            padding: 15px;
+            padding: 10px;
             text-align: center;
-            font-size: 0.8rem;
+            font-size: 0.75rem; /* Levemente menor */
             color: var(--text-muted);
-            background-color: var(--bg-dark); /* Um pouco mais escuro para diferenciar */
+            background-color: var(--bg-dark);
             border-top: 1px solid var(--border-color);
-            flex-shrink: 0; /* Impede que o rodapé encolha */
+            flex-shrink: 0;
+        }
+        .footer p {
+            margin: 2px 0; /* Espaço entre as linhas do rodapé */
+            opacity: 0.7; /* Deixa o texto mais sutil */
         }
 
         @media (max-width: 1200px) {
@@ -295,7 +299,8 @@
             </div>
         </div>
         <footer class="footer">
-            <p>Um projeto da matéria "Programação Mobile II" | Alunos: Henrique Reche e RAQUEL CRISTINA BARBOSA RAMOS</p>
+            <p>Projeto da matéria "Programação Mobile II" | Alunos: Henrique Reche e RAQUEL CRISTINA BARBOSA RAMOS</p>
+            <p>Desenvolvido com o auxílio de Gemini, Vercel e Firebase.</p>
         </footer>
     </div>
 
