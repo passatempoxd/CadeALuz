@@ -28,7 +28,7 @@
         
         html, body {
             height: 100%;
-            overflow: hidden;
+            overflow: hidden; 
         }
 
         body {
@@ -62,6 +62,7 @@
             color: white;
             padding: 20px 30px; 
             text-align: center;
+            flex-shrink: 0; /* Impede que o header encolha */
         }
         .header h1 {
             font-size: 2.1rem; 
@@ -76,23 +77,22 @@
             overflow: hidden;
         }
         
-        /* ALTERAÇÃO ESTRUTURAL 1: A seção do formulário agora é um contêiner flexível */
         .form-section {
             padding: 20px 30px; 
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Garante que nada vaze */
+            overflow: hidden; 
         }
         
         .form-section h3 { font-size: 1.4rem; color: white; font-weight: 600; margin-bottom: 10px; text-align: left; flex-shrink: 0; }
         .form-section p { color: var(--text-muted); margin-bottom: 15px; text-align: left; font-size: 0.9rem; flex-shrink: 0; }
         
-        /* ALTERAÇÃO ESTRUTURAL 2: O formulário em si agora cresce e tem rolagem interna */
         #reportForm {
             flex-grow: 1;
-            overflow-y: auto; /* Apenas o formulário rola, se necessário */
+            overflow-y: auto; 
             display: flex;
             flex-direction: column;
+            padding-right: 10px; /* Espaço para a barra de rolagem */
         }
         
         .form-group { margin-bottom: 12px; } 
@@ -111,7 +111,7 @@
         }
 
         .form-group textarea {
-             min-height: 80px; /* Uma altura mínima para a descrição */
+             min-height: 80px;
         }
         
         .form-group input::placeholder, .form-group textarea::placeholder { color: var(--text-muted); }
@@ -143,8 +143,8 @@
             padding: 14px 40px;
             font-size: 1rem;
             box-shadow: 0 5px 15px rgba(142, 45, 226, 0.3);
-            margin-top: auto; /* ALTERAÇÃO ESTRUTURAL 3: Empurra o botão para o final */
-            flex-shrink: 0; /* Impede que o botão encolha */
+            margin-top: auto; 
+            flex-shrink: 0; 
         }
         .submit-btn:hover {
             transform: translateY(-2px);
@@ -168,13 +168,39 @@
         .status-message.success { background: #28a745; color: white; }
         .status-message.error { background: #dc3545; color: white; }
 
+        /* --- REGRAS CORRIGIDAS PARA CELULAR --- */
         @media (max-width: 1200px) {
-            html, body { height: auto; overflow: auto; }
+            html, body {
+                height: auto;       /* Devolve a altura automática */
+                overflow: auto;   /* Devolve a rolagem normal */
+            }
             body { padding: 0; }
-            .container { border-radius: 0; height: auto; max-height: none; }
-            .content { grid-template-columns: 1fr; }
-            .form-section { border-right: none; border-bottom: 1px solid var(--border-color); padding: 30px 20px; }
-            #reportForm { overflow-y: visible; }
+            .container {
+                height: auto;       /* Devolve a altura automática */
+                max-height: none;
+                border-radius: 0;
+                flex-direction: column;
+                display: block;    /* Desfaz o flexbox do desktop */
+            }
+            .content {
+                grid-template-columns: 1fr; /* Muda para coluna única */
+                overflow: visible;  /* ESSENCIAL: Impede que o mapa seja cortado */
+            }
+            .form-section { 
+                border-right: none; 
+                border-bottom: 1px solid var(--border-color); 
+                padding: 30px 20px;
+                height: auto;
+                overflow: visible;
+            }
+            #reportForm { 
+                height: auto;
+                overflow-y: visible; 
+            }
+            #map {
+                /* Garante que o mapa tenha uma altura mínima visível no celular */
+                min-height: 500px;
+            }
         }
     </style>
 </head>
