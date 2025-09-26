@@ -405,19 +405,47 @@
 
         // --- FUNÇÃO DE BUSCA DE ENDEREÇO APRIMORADA ---
         async function geocodeAddress() {
-            const address = document.getElementById('address').value;
-            if (!address) { showStatus('Por favor, digite um endereço para buscar.', 'error'); return; }
+            const userInput = document.getElementById('address').value.trim();
+            if (!userInput) {
+                showStatus('Por favor, digite um endereço para buscar.', 'error');
+                return;
+            }
+
+            // Regex para detectar um formato de CEP (00000-000 ou 00000000)
+            const cepRegex = /^\d{5}-?\d{3}$/;
             
-            // Caixa geográfica para a Grande São Paulo
-            const viewbox = '-47.2,-24.0,-46.0,-23.2';
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&countrycodes=br&viewbox=${viewbox}&bounded=1`;
+            let addressToSearch = userInput;
+
+            if (cepRegex.test(userInput)) {
+                // Se for um CEP, busca o endereço completo primeiro
+                try {
+                    const cep = userInput.replace('-', '');
+                    const viaCepResponse = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                    const cepData = await viaCepResponse.json();
+                    if (cepData.erro) {
+                        showStatus('CEP não encontrado.', 'error');
+                        return;
+                    }
+                    // Monta um endereço completo e preciso para o Nominatim
+                    addressToSearch = `${cepData.logradouro}, ${cepData.localidade}, ${cepData.uf}`;
+                    console.log('Endereço encontrado via CEP:', addressToSearch);
+                } catch (error) {
+                    console.error('Erro ao buscar CEP:', error);
+                    showStatus('Erro ao consultar o CEP. Tente o endereço.', 'error');
+                    return;
+                }
+            }
+
+            // Busca as coordenadas no Nominatim (com o endereço completo do CEP ou com o input original)
+            const viewbox = '-47.2,-24.0,-46.0,-23.2'; // Caixa geográfica para a Grande São Paulo
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressToSearch)}&countrycodes=br&viewbox=${viewbox}&bounded=1`;
             
             try {
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data && data.length > 0) {
-                    const { lat, lon } = data[0];
-                    map.setView([parseFloat(lat), parseFloat(lon)], 16);
+                const nominatimResponse = await fetch(url);
+                const nominatimData = await nominatimResponse.json();
+                if (nominatimData && nominatimData.length > 0) {
+                    const { lat, lon } = nominatimData[0];
+                    map.setView([parseFloat(lat), parseFloat(lon)], 17); // Mais zoom
                     updateSelectionMarker(parseFloat(lat), parseFloat(lon));
                 } else {
                     showStatus('Endereço não encontrado na região. Tente ser mais específico.', 'error');
