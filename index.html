@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale-1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadê a Luz?</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -31,18 +31,15 @@
             background: var(--bg-dark);
             color: var(--text-light);
             min-height: 100vh;
-            /* ALTERAÇÃO 1: Padding adaptativo para diferentes telas */
             padding: clamp(1rem, 4vw, 2.5rem); 
             display: flex;
             align-items: center;
             justify-content: center;
-            /* Adicionado para evitar quebras em telas muito pequenas */
             min-width: 320px;
         }
         
         .container {
             width: 100%;
-            /* ALTERAÇÃO 2: Largura máxima aumentada para monitores maiores */
             max-width: 1400px; 
             margin: 0 auto;
             background: var(--container-dark);
@@ -50,8 +47,8 @@
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
             overflow: hidden;
             border: 1px solid var(--border-color);
-            display: flex; /* Adicionado para estrutura interna */
-            flex-direction: column; /* Adicionado para estrutura interna */
+            display: flex;
+            flex-direction: column;
         }
         
         .header {
@@ -68,9 +65,9 @@
         
         .content { 
             display: grid;
-            /* ALTERAÇÃO 3: Coluna do formulário com tamanho mínimo e máximo */
-            grid-template-columns: minmax(400px, 1fr) 2fr; 
-            flex-grow: 1; /* Adicionado para ocupar espaço vertical */
+            /* ALTERAÇÃO PRINCIPAL: Largura mínima da coluna do formulário reduzida para melhor adaptação */
+            grid-template-columns: minmax(350px, 1fr) 2fr; 
+            flex-grow: 1;
         }
         
         .form-section {
@@ -78,7 +75,7 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            overflow-y: auto; /* Permite rolagem no formulário se a tela for baixa */
+            overflow-y: auto;
         }
         
         .form-section h3, .form-section p { text-align: center; margin-bottom: 20px; }
@@ -161,7 +158,6 @@
         .status-message.success { background: #28a745; color: white; }
         .status-message.error { background: #dc3545; color: white; }
 
-        /* ALTERAÇÃO 4: Ponto de quebra ajustado para tablets e telas médias */
         @media (max-width: 992px) {
             body { padding: 0; }
             .container { border-radius: 0; height: 100%; }
