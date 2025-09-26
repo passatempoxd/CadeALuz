@@ -23,6 +23,8 @@
             --text-light: #e0e0e0;
             --text-muted: #a0a0a0;
             --border-color: #40405c;
+            /* COR VERDE SUBSTITUÍDA POR AZUL */
+            --success-color: #3498db; 
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -150,6 +152,11 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(142, 45, 226, 0.5);
         }
+        /* NOVA CLASSE PARA O BOTÃO QUANDO ESTIVER PRONTO PARA ENVIAR */
+        .submit-btn.ready {
+            background: var(--success-color);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
         .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
         
         .map-section { height: 100%; position: relative; }
@@ -161,8 +168,9 @@
         .leaflet-popup-content p { margin: 5px 0; color: var(--text-muted); }
         .leaflet-popup-content p strong { color: var(--text-light); }
         .leaflet-container a.leaflet-popup-close-button { color: var(--text-light); }
-        .resolve-btn { width: 100%; padding: 8px; margin-top: 10px; background-color: #28a745; color: white; }
-        .resolve-btn:hover { background-color: #218838; }
+
+        .resolve-btn { width: 100%; padding: 8px; margin-top: 10px; background-color: var(--success-color); color: white; }
+        .resolve-btn:hover { background-color: #2980b9; }
         
         .status-message { 
             position: absolute;
@@ -189,7 +197,7 @@
             visibility: visible;
             transform: translate(-50%, -50%);
         }
-        .status-message.success { background: rgba(40, 167, 69, 0.9); }
+        .status-message.success { background: rgba(52, 152, 219, 0.9); }
         .status-message.error { background: rgba(220, 53, 69, 0.9); }
         
         #map-legend {
@@ -250,11 +258,40 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px; /* Espaço entre o emoji e o texto */
+            gap: 10px;
         }
         .locate-btn:hover {
             border-color: var(--primary-accent);
             color: var(--primary-accent);
+        }
+        
+        /* --- ESTILOS PARA O NOVO LAYOUT MOBILE --- */
+        .map-preview-container {
+            display: none; /* Escondido por padrão no desktop */
+        }
+        .map-fullscreen-overlay {
+            display: none; /* Escondido por padrão */
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--bg-dark);
+            z-index: 3000;
+            flex-direction: column;
+        }
+        .map-fullscreen-overlay.active {
+            display: flex;
+        }
+        #fullscreen-map {
+            width: 100%;
+            flex-grow: 1;
+        }
+        .close-map-btn {
+            background: var(--primary-accent);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+            cursor: pointer;
         }
 
         @media (max-width: 1200px) {
@@ -262,13 +299,38 @@
             body { padding: 0; }
             .container { height: auto; max-height: none; border-radius: 0; display: block; }
             .content { grid-template-columns: 1fr; overflow: visible; }
-            .form-section { border-right: none; border-bottom: 1px solid var(--border-color); padding: 30px 20px; height: auto; overflow: visible; }
+            .form-section { border-right: none; padding: 30px 20px; height: auto; overflow: visible; }
             #reportForm { height: auto; overflow-y: visible; }
-            #map { min-height: 500px; }
+            .map-section { display: none; } /* Esconde a seção do mapa no layout antigo */
             #map-legend { display: none; }
             .footer { position: relative; }
             .status-message { bottom: 30px; top: auto; transform: translate(-50%, 10px); }
             .status-message.show { transform: translate(-50%, 0); }
+
+            /* Mostra a pré-visualização do mapa no mobile */
+            .map-preview-container {
+                display: block;
+                height: 150px;
+                border-radius: 10px;
+                overflow: hidden;
+                position: relative;
+                cursor: pointer;
+                border: 2px solid var(--border-color);
+            }
+            .map-preview-container::after {
+                content: 'Clique para expandir e selecionar o local';
+                position: absolute;
+                top: 0; left: 0;
+                width: 100%; height: 100%;
+                background: rgba(0,0,0,0.6);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: 600;
+                text-align: center;
+                padding: 10px;
+            }
         }
     </style>
 </head>
@@ -279,10 +341,11 @@
         </div>
         <div class="content">
             <div class="form-section">
+                <div class="map-preview-container" id="map-preview"></div>
+
                 <h3>Reportar um Problema</h3>
-                <p>Digite o endereço ou clique no mapa para selecionar o local.</p>
+                <p>Selecione a localização e preencha os detalhes.</p>
                 <form id="reportForm">
-                    
                     <div class="form-group">
                          <button type="button" id="locateBtn" class="locate-btn">
                             🎯 Use minha localização atual
@@ -342,6 +405,11 @@
             <p>Projeto de "Programação Mobile II": Henrique Reche & Raquel Cristina Barbosa Ramos • Desenvolvido com Gemini, Vercel & Firebase.</p>
         </footer>
     </div>
+    
+    <div class="map-fullscreen-overlay" id="fullscreen-overlay">
+        <div id="fullscreen-map"></div>
+        <div class="close-map-btn" id="close-map-btn">Fechar Mapa</div>
+    </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     
@@ -366,14 +434,35 @@
             return temp.innerHTML;
         }
 
-        const map = L.map('map').setView([-23.5244, -46.8354], 14);
+        const initialCoords = [-23.5244, -46.8354];
+        const isMobile = window.innerWidth <= 1200;
+
+        // --- INICIALIZAÇÃO DOS MAPAS ---
+        const map = L.map('map').setView(initialCoords, 14);
+        let fullscreenMap, mapPreview;
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             maxZoom: 19
         }).addTo(map);
 
+        if (isMobile) {
+            fullscreenMap = L.map('fullscreen-map').setView(initialCoords, 14);
+            mapPreview = L.map('map-preview', {
+                dragging: false, zoomControl: false, scrollWheelZoom: false, doubleClickZoom: false
+            }).setView(initialCoords, 13);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(fullscreenMap);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapPreview);
+        }
+
         let currentMarker = null;
         const outageMarkersLayer = L.layerGroup().addTo(map);
+        if(isMobile) {
+            outageMarkersLayer.addTo(fullscreenMap);
+            outageMarkersLayer.addTo(mapPreview);
+        }
+
         const icons = {
             red: new L.Icon({
                 iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
@@ -440,10 +529,19 @@
         }
 
         function updateSelectionMarker(lat, lng) {
-            if (currentMarker) map.removeLayer(currentMarker);
-            currentMarker = L.marker([lat, lng]).addTo(map);
+            if (currentMarker) {
+                map.removeLayer(currentMarker);
+                if(isMobile) fullscreenMap.removeLayer(currentMarker);
+            }
+            currentMarker = L.marker([lat, lng]);
+            map.addLayer(currentMarker);
+            if(isMobile) fullscreenMap.addLayer(currentMarker);
+
             document.getElementById('latitude').value = lat.toFixed(6);
             document.getElementById('longitude').value = lng.toFixed(6);
+            
+            // ATIVA O BOTÃO DE REPORTAR
+            document.getElementById('submitBtn').classList.add('ready');
         }
         
         function locateUser() {
@@ -451,29 +549,22 @@
                 showStatus('Geolocalização não é suportada pelo seu navegador.', 'error');
                 return;
             }
-
             showStatus('Buscando sua localização...', 'success');
-
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
-                    map.setView([lat, lng], 16);
+                    const targetMap = isMobile ? fullscreenMap : map;
+                    targetMap.setView([lat, lng], 16);
                     updateSelectionMarker(lat, lng);
                     showStatus('Localização encontrada!', 'success');
                 },
                 (error) => {
                     let message = 'Não foi possível obter sua localização.';
                     switch (error.code) {
-                        case error.PERMISSION_DENIED:
-                            message = 'Você negou o pedido de Geolocalização.';
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            message = 'Informação de localização não está disponível.';
-                            break;
-                        case error.TIMEOUT:
-                            message = 'O pedido de geolocalização expirou.';
-                            break;
+                        case error.PERMISSION_DENIED: message = 'Você negou o pedido de Geolocalização.'; break;
+                        case error.POSITION_UNAVAILABLE: message = 'Informação de localização não está disponível.'; break;
+                        case error.TIMEOUT: message = 'O pedido de geolocalização expirou.'; break;
                     }
                     showStatus(message, 'error');
                 }
@@ -505,9 +596,10 @@
                 const nominatimData = await nominatimResponse.json();
                 if (nominatimData && nominatimData.length > 0) {
                     const { lat, lon } = nominatimData[0];
-                    map.setView([parseFloat(lat), parseFloat(lon)], 17);
+                    const targetMap = isMobile ? fullscreenMap : map;
+                    targetMap.setView([parseFloat(lat), parseFloat(lon)], 17);
                     updateSelectionMarker(parseFloat(lat), parseFloat(lon));
-                } else { showStatus('Endereço não encontrado na região. Tente ser mais específico.', 'error'); }
+                } else { showStatus('Endereço não encontrado na região.', 'error'); }
             } catch (error) { showStatus('Ocorreu um erro ao buscar o endereço.', 'error'); }
         }
 
@@ -515,7 +607,7 @@
             e.preventDefault();
             const submitBtn = document.getElementById('submitBtn');
             if (!document.getElementById('problemType').value || !document.getElementById('latitude').value) {
-                showStatus('Selecione o tipo de problema e um local.', 'error'); return;
+                showStatus('Selecione um local no mapa primeiro.', 'error'); return;
             }
             submitBtn.disabled = true; submitBtn.textContent = 'Enviando...';
             
@@ -532,7 +624,12 @@
                 await db.collection('outages').add(reportData);
                 showStatus('Problema reportado com sucesso!', 'success');
                 document.getElementById('reportForm').reset();
-                if (currentMarker) { map.removeLayer(currentMarker); currentMarker = null; }
+                if (currentMarker) {
+                    map.removeLayer(currentMarker);
+                    if(isMobile) fullscreenMap.removeLayer(currentMarker);
+                    currentMarker = null;
+                }
+                submitBtn.classList.remove('ready'); // Reseta a cor do botão
             } catch (error) {
                 showStatus('Erro ao enviar o reporte. Tente novamente.', 'error');
             } finally {
@@ -557,8 +654,24 @@
                 deleteOutage(docId);
             }
         });
+        
+        if (isMobile) {
+            const overlay = document.getElementById('fullscreen-overlay');
+            document.getElementById('map-preview').addEventListener('click', () => {
+                overlay.classList.add('active');
+                fullscreenMap.invalidateSize(); // Corrige o tamanho do mapa ao exibir
+            });
+            document.getElementById('close-map-btn').addEventListener('click', () => {
+                overlay.classList.remove('active');
+            });
+            fullscreenMap.on('click', (e) => {
+                updateSelectionMarker(e.latlng.lat, e.latlng.lng);
+                overlay.classList.remove('active'); // Fecha o mapa ao selecionar
+            });
+        } else {
+            map.on('click', (e) => updateSelectionMarker(e.latlng.lat, e.latlng.lng));
+        }
 
-        map.on('click', (e) => updateSelectionMarker(e.latlng.lat, e.latlng.lng));
         document.getElementById('searchBtn').addEventListener('click', geocodeAddress);
         document.getElementById('locateBtn').addEventListener('click', locateUser);
         document.getElementById('address').addEventListener('keydown', (e) => {
