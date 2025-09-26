@@ -185,11 +185,10 @@
         #map-legend ul li { display: flex; align-items: center; margin-bottom: 5px; font-size: 0.85rem; color: var(--text-muted); }
         #map-legend ul li img { width: 12px; height: auto; margin-right: 8px; }
 
-        /* --- ESTILOS DO RODAPÉ (VERSÃO FINAL DISCRETA) --- */
         .footer {
-            padding: 5px; /* Padding bem pequeno */
+            padding: 5px;
             text-align: center;
-            font-size: 0.65rem; /* Fonte bem pequena */
+            font-size: 0.65rem;
             color: var(--text-muted);
             background-color: var(--bg-dark);
             border-top: 1px solid var(--border-color);
@@ -198,7 +197,7 @@
         .footer p {
             margin: 0;
             padding: 0;
-            opacity: 0.6; /* Deixa o texto mais sutil */
+            opacity: 0.6;
         }
 
         @media (max-width: 1200px) {
@@ -276,11 +275,10 @@
                         <label for="description">📝 Descrição (Opcional):</label>
                         <textarea id="description" name="description" placeholder="Ex: A rua inteira está sem luz desde as 10h."></textarea>
                     </div>
-                    <div class="form-group">
-                        <label>📍 Coordenadas:</label>
-                        <input type="text" id="latitude" name="latitude" placeholder="Latitude" readonly required>
-                        <input type="text" id="longitude" name="longitude" placeholder="Longitude" readonly required style="margin-top: 8px;">
-                    </div>
+                    
+                    <input type="hidden" id="latitude" name="latitude" required>
+                    <input type="hidden" id="longitude" name="longitude" required>
+
                     <button type="submit" class="submit-btn" id="submitBtn">Reportar Problema</button>
                     <div id="statusMessage" class="status-message"></div>
                 </form>
@@ -300,7 +298,7 @@
             </div>
         </div>
         <footer class="footer">
-            <p>Projeto de "Programação Mobile II": Henrique Reche & Raquel Cristina Barbosa Ramos - Desenvolvido com Gemini, Vercel & Firebase.</p>
+            <p>Projeto de "Programação Mobile II": Henrique Reche & Raquel Cristina Barbosa Ramos • Desenvolvido com Gemini, Vercel & Firebase.</p>
         </footer>
     </div>
 
