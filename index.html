@@ -60,15 +60,15 @@
         .header {
             background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
             color: white;
-            /* AJUSTE: Padding vertical do cabeçalho reduzido */
-            padding: 20px 30px; 
+            padding: 25px 30px;
             text-align: center;
+            transition: all 0.2s ease-in-out;
         }
         .header h1 {
-            /* AJUSTE: Fonte do título levemente reduzida */
-            font-size: 2.1rem; 
+            font-size: 2.2rem;
             font-weight: 700;
             text-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease-in-out;
         }
         
         .content { 
@@ -79,29 +79,26 @@
         }
         
         .form-section {
-            /* AJUSTE: Padding vertical da seção do formulário reduzido */
-            padding: 20px 30px; 
+            padding: 25px 30px; 
             display: flex;
             flex-direction: column;
             justify-content: center;
             overflow-y: auto;
+            transition: all 0.2s ease-in-out;
         }
         
-        .form-section h3 { font-size: 1.4rem; color: white; font-weight: 600; margin-bottom: 10px; text-align: left; }
-        .form-section p { color: var(--text-muted); margin-bottom: 15px; text-align: left; font-size: 0.9rem; }
+        .form-section h3 { font-size: 1.4rem; color: white; font-weight: 600; margin-bottom: 10px; text-align: left; transition: all 0.2s ease-in-out; }
+        .form-section p { color: var(--text-muted); margin-bottom: 20px; text-align: left; font-size: 0.9rem; transition: all 0.2s ease-in-out; }
         
-        /* AJUSTE: Espaçamento entre os campos reduzido */
-        .form-group { margin-bottom: 12px; } 
-        /* AJUSTE: Espaçamento da label reduzido */
-        .form-group label { display: block; margin-bottom: 4px; font-weight: 500; color: var(--text-light); font-size: 0.9rem; }
+        .form-group { margin-bottom: 15px; transition: all 0.2s ease-in-out; } 
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: var(--text-light); font-size: 0.9rem; transition: all 0.2s ease-in-out; }
         
         .form-group input, .form-group textarea, .form-group select {
             width: 100%;
-            /* AJUSTE: Altura dos campos de texto reduzida */
-            padding: 10px 15px; 
+            padding: 12px 15px;
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            font-size: 0.9rem; 
+            font-size: 0.95rem; 
             font-family: 'Poppins', sans-serif;
             transition: all 0.3s ease;
             background: var(--input-dark);
@@ -133,11 +130,10 @@
         .submit-btn {
             background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
             color: white;
-            padding: 14px 40px;
-            font-size: 1rem;
+            padding: 15px 40px;
+            font-size: 1.1rem;
             box-shadow: 0 5px 15px rgba(142, 45, 226, 0.3);
-            /* AJUSTE: Margem do botão de envio reduzida */
-            margin-top: 5px; 
+            margin-top: 10px;
         }
         .submit-btn:hover {
             transform: translateY(-2px);
@@ -167,6 +163,20 @@
             .container { border-radius: 0; height: auto; max-height: none; }
             .content { grid-template-columns: 1fr; }
             .form-section { border-right: none; border-bottom: 1px solid var(--border-color); padding: 30px 20px; }
+        }
+
+        /* --- NOVO AJUSTE FINO PARA MONITORES LARGOS E BAIXOS (EX: 1600x900) --- */
+        @media (max-height: 900px) and (min-width: 1201px) {
+            .header { padding: 15px 30px; }
+            .header h1 { font-size: 1.9rem; }
+            .form-section { padding: 20px 30px; }
+            .form-section h3 { font-size: 1.3rem; margin-bottom: 8px; }
+            .form-section p { font-size: 0.85rem; margin-bottom: 15px; }
+            .form-group { margin-bottom: 10px; }
+            .form-group label { font-size: 0.85rem; margin-bottom: 4px; }
+            .form-group input, .form-group textarea, .form-group select { padding: 9px 12px; font-size: 0.9rem; }
+            .submit-btn { padding: 12px 30px; font-size: 1rem; margin-top: 5px; }
+            .status-message { margin-top: 10px; }
         }
     </style>
 </head>
