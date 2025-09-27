@@ -23,8 +23,8 @@
             --text-light: #e0e0e0;
             --text-muted: #a0a0a0;
             --border-color: #40405c;
-            --success-color: #95a5a6; /* Cor de sucesso (cinza) */
-            --success-hover: #7f8c8d;  /* Cor de hover (cinza escuro) */
+            --success-color: #ff69b4; /* Nova cor de sucesso (Rosa Vibrante) */
+            --success-hover: #ff4090;  /* Nova cor de hover (Rosa mais escuro) */
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -183,7 +183,7 @@
             white-space: nowrap;
         }
         .status-message.show { opacity: 1; visibility: visible; transform: translate(-50%, -50%); }
-        .status-message.success { background: rgba(149, 165, 166, 0.9); } /* RGBA do cinza */
+        .status-message.success { background: rgba(255, 105, 180, 0.9); } /* RGBA do Rosa Vibrante */
         .status-message.error { background: rgba(220, 53, 69, 0.9); }
         
         #map-legend {
@@ -490,7 +490,6 @@
             map.on('click', (e) => updateSelectionMarker(e.latlng.lat, e.latlng.lng));
         }
 
-        // ALTERAÇÃO PRINCIPAL AQUI: Ícones para os marcadores
         const icons = {
             red: new L.Icon({
                 iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
@@ -517,9 +516,8 @@
                 shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
                 iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
             }),
-            // NOVO ÍCONE VIOLETA/ROXO PARA SELEÇÃO
             selection: new L.Icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png', /* Ícone Violeta para seleção */
                 shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
                 iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
             })
@@ -560,23 +558,19 @@
             document.getElementById('latitude').value = lat.toFixed(6);
             document.getElementById('longitude').value = lng.toFixed(6);
 
-            // Atualiza o marcador no mapa principal (desktop) ou modal (mobile)
             if (activeMap) {
                 if (currentMarker) {
                     activeMap.removeLayer(currentMarker);
                 }
-                // USA O NOVO ÍCONE DE SELEÇÃO
                 currentMarker = L.marker([lat, lng], { icon: icons.selection }).addTo(activeMap);
             }
             
-            // Atualiza também o marcador no mapa de preview (mobile)
             if (mapPreview) {
                 if (previewMarker) {
                     mapPreview.removeLayer(previewMarker);
                 }
-                // USA O NOVO ÍCONE DE SELEÇÃO
                 previewMarker = L.marker([lat, lng], { icon: icons.selection }).addTo(mapPreview);
-                mapPreview.setView([lat, lng], 15); // Centraliza o preview no local
+                mapPreview.setView([lat, lng], 15);
             }
 
             if (recenterButtonElement) {
