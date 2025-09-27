@@ -23,8 +23,8 @@
             --text-light: #e0e0e0;
             --text-muted: #a0a0a0;
             --border-color: #40405c;
-            --success-color: #95a5a6; /* Nova cor de sucesso (cinza) */
-            --success-hover: #7f8c8d;  /* Nova cor de hover (cinza escuro) */
+            --success-color: #95a5a6; /* Cor de sucesso (cinza) */
+            --success-hover: #7f8c8d;  /* Cor de hover (cinza escuro) */
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -477,8 +477,6 @@
                     addControlsToMap(map);
                     map.on('click', (e) => {
                         updateSelectionMarker(e.latlng.lat, e.latlng.lng);
-                        // A LINHA ABAIXO FOI REMOVIDA PARA O MAPA NÃO FECHAR SOZINHO
-                        // document.getElementById('map-modal').classList.remove('active');
                     });
                 }
                 setTimeout(() => map.invalidateSize(), 100);
@@ -492,6 +490,7 @@
             map.on('click', (e) => updateSelectionMarker(e.latlng.lat, e.latlng.lng));
         }
 
+        // ALTERAÇÃO PRINCIPAL AQUI: Ícones para os marcadores
         const icons = {
             red: new L.Icon({
                 iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
@@ -517,8 +516,15 @@
                 iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
                 shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
                 iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+            }),
+            // NOVO ÍCONE VIOLETA/ROXO PARA SELEÇÃO
+            selection: new L.Icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
             })
         };
+
         function getIconForProblem(problemType) {
             switch (problemType) {
                 case "Falta de Energia Total": return icons.red;
@@ -559,15 +565,17 @@
                 if (currentMarker) {
                     activeMap.removeLayer(currentMarker);
                 }
-                currentMarker = L.marker([lat, lng]).addTo(activeMap);
+                // USA O NOVO ÍCONE DE SELEÇÃO
+                currentMarker = L.marker([lat, lng], { icon: icons.selection }).addTo(activeMap);
             }
             
-            // ATUALIZAÇÃO: Atualiza também o marcador no mapa de preview (mobile)
+            // Atualiza também o marcador no mapa de preview (mobile)
             if (mapPreview) {
                 if (previewMarker) {
                     mapPreview.removeLayer(previewMarker);
                 }
-                previewMarker = L.marker([lat, lng]).addTo(mapPreview);
+                // USA O NOVO ÍCONE DE SELEÇÃO
+                previewMarker = L.marker([lat, lng], { icon: icons.selection }).addTo(mapPreview);
                 mapPreview.setView([lat, lng], 15); // Centraliza o preview no local
             }
 
@@ -588,8 +596,6 @@
                     targetMap.setView([lat, lng], 16);
                     updateSelectionMarker(lat, lng);
                     showStatus('Localização encontrada!', 'success');
-                    // Não fecha mais o mapa sozinho, o usuário confirma
-                    // if(isMobile) document.getElementById('map-modal').classList.remove('active');
                 },
                 (error) => {
                     let message = 'Não foi possível obter sua localização.';
@@ -639,8 +645,6 @@
                     const { lat, lon } = nominatimData[0];
                     targetMap.setView([parseFloat(lat), parseFloat(lon)], 17);
                     updateSelectionMarker(parseFloat(lat), parseFloat(lon));
-                    // Não fecha o mapa sozinho
-                    // if(isMobile) document.getElementById('map-modal').classList.remove('active');
                 } else { showStatus('Endereço não encontrado na região.', 'error'); }
             } catch (error) { showStatus('Ocorreu um erro ao buscar o endereço.', 'error'); }
         }
@@ -666,7 +670,6 @@
                 showStatus('Problema reportado com sucesso!', 'success');
                 document.getElementById('reportForm').reset();
                 
-                // Limpa o marcador do mapa principal/modal
                 if (currentMarker) {
                     const targetMap = isMobile ? map : map;
                     if(targetMap && targetMap.hasLayer(currentMarker)) {
@@ -675,7 +678,6 @@
                     currentMarker = null;
                 }
 
-                // Limpa o marcador do preview
                 if (previewMarker && mapPreview && mapPreview.hasLayer(previewMarker)) {
                     mapPreview.removeLayer(previewMarker);
                     previewMarker = null;
