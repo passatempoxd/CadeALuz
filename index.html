@@ -23,7 +23,6 @@
             --text-light: #e0e0e0;
             --text-muted: #a0a0a0;
             --border-color: #40405c;
-            --success-color: #3498db; 
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -123,7 +122,7 @@
         .address-search-group { display: flex; gap: 10px; }
         .address-search-group input { flex-grow: 1; }
         
-        .search-btn, .submit-btn, .resolve-btn {
+        .search-btn, .submit-btn, .resolve-btn, .locate-btn {
             border: none;
             border-radius: 10px;
             cursor: pointer;
@@ -148,10 +147,6 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(142, 45, 226, 0.5);
         }
-        .submit-btn.ready {
-            background: var(--success-color);
-            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
-        }
         .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
         
         .map-section { height: 100%; position: relative; }
@@ -163,9 +158,8 @@
         .leaflet-popup-content p { margin: 5px 0; color: var(--text-muted); }
         .leaflet-popup-content p strong { color: var(--text-light); }
         .leaflet-container a.leaflet-popup-close-button { color: var(--text-light); }
-        
-        .resolve-btn { width: 100%; padding: 8px; margin-top: 10px; background-color: var(--success-color); color: white; }
-        .resolve-btn:hover { background-color: #2980b9; }
+        .resolve-btn { width: 100%; padding: 8px; margin-top: 10px; background-color: #28a745; color: white; }
+        .resolve-btn:hover { background-color: #218838; }
         
         .status-message { 
             position: absolute;
@@ -187,8 +181,8 @@
             white-space: nowrap;
         }
         .status-message.show { opacity: 1; visibility: visible; transform: translate(-50%, -50%); }
-        .status-message.success { background: rgba(52, 152, 219, 0.9); }
-        .status-message.error { background: rgba(231, 76, 60, 0.9); }
+        .status-message.success { background: rgba(40, 167, 69, 0.9); }
+        .status-message.error { background: rgba(220, 53, 69, 0.9); }
         
         #map-legend {
             position: absolute;
@@ -217,8 +211,7 @@
         }
         .footer p { margin: 0; padding: 0; opacity: 0.6; }
 
-        /* ESTILOS PARA OS BOTÕES DE CONTROLE DO MAPA */
-        .leaflet-control-locate a, .leaflet-control-recenter a {
+        .leaflet-control-recenter a {
             background-color: var(--input-dark);
             border-radius: 4px;
             border: 1px solid var(--border-color);
@@ -229,30 +222,41 @@
             display: block;
             text-decoration: none;
         }
-        .leaflet-control-locate a:hover, .leaflet-control-recenter a:hover {
+        .leaflet-control-recenter a:hover {
             background-color: var(--container-dark);
         }
         
-        .map-preview { display: none; }
-        .map-modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: var(--bg-dark);
-            z-index: 3000;
-            flex-direction: column;
-        }
-        .map-modal.active { display: flex; }
-        #modal-map { flex-grow: 1; }
-        .modal-close-btn {
-            background: var(--primary-accent);
-            color: white;
-            padding: 15px;
+        .location-divider {
+            display: flex;
+            align-items: center;
             text-align: center;
-            font-weight: 600;
-            cursor: pointer;
-            flex-shrink: 0;
+            margin: 15px 0;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .location-divider::before, .location-divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .location-divider:not(:empty)::before { margin-right: .5em; }
+        .location-divider:not(:empty)::after { margin-left: .5em; }
+        
+        .locate-btn {
+            width: 100%;
+            padding: 10px 15px;
+            background: transparent;
+            color: var(--text-light);
+            border: 2px solid var(--input-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .locate-btn:hover {
+            border-color: var(--primary-accent);
+            color: var(--primary-accent);
         }
 
         @media (max-width: 1200px) {
@@ -260,38 +264,11 @@
             body { padding: 0; }
             .container { height: auto; max-height: none; border-radius: 0; display: block; }
             .content { grid-template-columns: 1fr; overflow: visible; }
-            .form-section { border-right: none; padding: 30px 20px; height: auto; overflow: visible; }
+            .form-section { border-right: none; border-bottom: 1px solid var(--border-color); padding: 30px 20px; height: auto; overflow: visible; }
             #reportForm { height: auto; overflow-y: visible; }
-            .map-section, #map-legend { display: none; }
+            #map { min-height: 500px; }
+            #map-legend { display: none; }
             .footer { position: relative; }
-            .status-message { bottom: 30px; top: auto; transform: translate(-50%, 10px); }
-            .status-message.show { transform: translate(-50%, 0); }
-
-            .map-preview {
-                display: block;
-                height: 150px;
-                border-radius: 10px;
-                margin-bottom: 20px;
-                overflow: hidden;
-                position: relative;
-                cursor: pointer;
-                border: 2px solid var(--border-color);
-            }
-            .map-preview::after {
-                content: 'Clique para abrir o mapa e selecionar o local';
-                position: absolute;
-                top: 0; left: 0;
-                width: 100%; height: 100%;
-                background: rgba(0,0,0,0.6);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-weight: 600;
-                text-align: center;
-                padding: 10px;
-                font-size: 1.1rem;
-            }
         }
     </style>
 </head>
@@ -302,11 +279,17 @@
         </div>
         <div class="content">
             <div class="form-section">
-                <div class="map-preview" id="map-preview"></div>
-                
                 <h3>Reportar um Problema</h3>
                 <p>Selecione a localização e preencha os detalhes.</p>
                 <form id="reportForm">
+                    <div class="form-group">
+                         <button type="button" id="locateBtn" class="locate-btn">
+                            🎯 Use minha localização atual
+                        </button>
+                    </div>
+                    <div class="location-divider">
+                        <span>OU</span>
+                    </div>
                     <div class="form-group">
                         <label for="address">🔎 Endereço:</label>
                         <div class="address-search-group">
@@ -314,6 +297,7 @@
                             <button type="button" id="searchBtn" class="search-btn">Buscar</button>
                         </div>
                     </div>
+                    
                     <div class="form-group">
                         <label for="userName">👤 Seu Nome (Opcional):</label>
                         <input type="text" id="userName" name="userName" placeholder="Ex: Maria S.">
@@ -349,12 +333,7 @@
         </footer>
     </div>
 
-    <div class="map-modal" id="map-modal">
-        <div id="modal-map"></div>
-        <div class="modal-close-btn" id="modal-close-btn">Confirmar Localização e Fechar</div>
-    </div>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     
     <script>
         const firebaseConfig = { /* ... suas chaves ... */ };
@@ -364,164 +343,111 @@
         function sanitizeHTML(text) { /* ... função ... */ }
 
         const initialCoords = [-23.5244, -46.8354];
-        const isMobile = window.innerWidth <= 1200;
-        let map;
-        let mapPreview;
-        
-        const outageMarkersLayer = L.layerGroup();
+        const map = L.map('map').setView(initialCoords, 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
+
         let currentMarker = null;
         let recenterButtonElement = null;
-
-        function initMap(mapId, options) {
-            const mapInstance = L.map(mapId, options).setView(initialCoords, options.zoom || 14);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19
-            }).addTo(mapInstance);
-            outageMarkersLayer.addTo(mapInstance);
-            return mapInstance;
-        }
-
-        // --- LÓGICA ATUALIZADA DOS BOTÕES DO MAPA ---
-        function addControlsToMap(mapInstance) {
-            const LocateControl = L.Control.extend({
-                onAdd: function(map) {
-                    const btn = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-locate');
-                    btn.innerHTML = `<a href="#" title="Minha Localização">🎯</a>`;
-                    L.DomEvent.on(btn, 'click', L.DomEvent.stop).on(btn, 'click', locateUser);
-                    return btn;
-                }
-            });
-            const RecenterControl = L.Control.extend({
-                onAdd: function(map) {
-                    const btn = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-recenter');
-                    btn.innerHTML = `<a href="#" title="Centralizar no Marcador">📍</a>`;
-                    recenterButtonElement = btn;
-                    L.DomUtil.addClass(recenterButtonElement, 'leaflet-disabled'); // Começa inativo
-                    L.DomEvent.on(btn, 'click', L.DomEvent.stop).on(btn, 'click', recenterMap);
-                    return btn;
-                }
-            });
-            new LocateControl({ position: 'topleft' }).addTo(mapInstance);
-            new RecenterControl({ position: 'topleft' }).addTo(mapInstance);
-        }
-
-        if (isMobile) {
-            mapPreview = initMap('map-preview', {
-                dragging: false, zoomControl: false, scrollWheelZoom: false, doubleClickZoom: false, zoom: 13
-            });
-            
-            document.getElementById('map-preview').addEventListener('click', () => {
-                document.getElementById('map-modal').classList.add('active');
-                if (!map) {
-                    map = initMap('modal-map', { zoomControl: true });
-                    addControlsToMap(map); // Adiciona os controles ao mapa do modal
-                    map.on('click', (e) => {
-                        updateSelectionMarker(e.latlng.lat, e.latlng.lng);
-                        document.getElementById('map-modal').classList.remove('active');
-                    });
-                }
-                map.invalidateSize();
-            });
-            document.getElementById('modal-close-btn').addEventListener('click', () => {
-                document.getElementById('map-modal').classList.remove('active');
-            });
-        } else {
-            map = initMap('map', { zoomControl: true });
-            addControlsToMap(map); // Adiciona os controles ao mapa do desktop
-            map.on('click', (e) => updateSelectionMarker(e.latlng.lat, e.latlng.lng));
-        }
-
-        const icons = { /* ... ícones ... */ };
-        function getIconForProblem(problemType) { /* ... função ... */ }
-        function fetchAndDisplayOutages() { /* ... função ... */ }
+        const outageMarkersLayer = L.layerGroup().addTo(map);
+        const icons = { /* ... seus ícones ... */ };
         
-        function updateSelectionMarker(lat, lng) {
-            const targetMap = isMobile ? map : map;
-            if (currentMarker) {
-                targetMap.removeLayer(currentMarker);
-            }
-            currentMarker = L.marker([lat, lng]).addTo(targetMap);
-            document.getElementById('latitude').value = lat.toFixed(6);
-            document.getElementById('longitude').value = lng.toFixed(6);
-            
-            // Ativa o botão de centralizar
-            if (recenterButtonElement) {
-                L.DomUtil.removeClass(recenterButtonElement, 'leaflet-disabled');
-            }
-            document.getElementById('submitBtn').classList.add('ready');
-        }
-        
+        // BOTÃO 🎯 (MINHA LOCALIZAÇÃO)
         function locateUser() {
-            if (!navigator.geolocation) { showStatus('Geolocalização não é suportada.', 'error'); return; }
+            if (!navigator.geolocation) {
+                showStatus('Geolocalização não é suportada.', 'error');
+                return;
+            }
             showStatus('Buscando sua localização...', 'success');
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
-                    const targetMap = isMobile ? map : map;
-                    targetMap.setView([lat, lng], 16);
+                    map.setView([lat, lng], 16);
                     updateSelectionMarker(lat, lng);
                     showStatus('Localização encontrada!', 'success');
-                    if(isMobile) document.getElementById('map-modal').classList.remove('active');
                 },
                 (error) => {
                     let message = 'Não foi possível obter sua localização.';
-                    switch (error.code) {
-                        case error.PERMISSION_DENIED: message = 'Você negou o pedido de Geolocalização.'; break;
-                        case error.POSITION_UNAVAILABLE: message = 'Informação de localização não está disponível.'; break;
-                        case error.TIMEOUT: message = 'O pedido de geolocalização expirou.'; break;
-                    }
+                    // ... (lógica de erro) ...
                     showStatus(message, 'error');
-                    // Fallback: centraliza em Carapicuíba se der erro
-                    const targetMap = isMobile ? map : map;
-                    targetMap.setView(initialCoords, 14);
+                    map.setView(initialCoords, 14); // Fallback para Carapicuíba
                 }
             );
         }
 
+        // BOTÃO 📍 (CENTRALIZAR MARCADOR)
         function recenterMap() {
-            const targetMap = isMobile ? map : map;
             if (currentMarker) {
-                targetMap.setView(currentMarker.getLatLng(), 16);
+                map.setView(currentMarker.getLatLng(), 16);
+            } else {
+                map.setView(initialCoords, 14);
             }
-            // Se não houver marcador, a função é chamada mas não faz nada,
-            // pois o botão já está visualmente inativo.
         }
+        
+        // APENAS O CONTROLE DE CENTRALIZAR (📍) FICA NO MAPA
+        const RecenterControl = L.Control.extend({
+            onAdd: function(map) {
+                const btn = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-recenter');
+                btn.innerHTML = `<a href="#" title="Centralizar no Marcador">📍</a>`;
+                recenterButtonElement = btn;
+                L.DomUtil.addClass(recenterButtonElement, 'leaflet-disabled');
+                L.DomEvent.on(btn, 'click', L.DomEvent.stop).on(btn, 'click', recenterMap);
+                return btn;
+            }
+        });
+        new RecenterControl({ position: 'topleft' }).addTo(map);
+
+        function getIconForProblem(problemType) { /* ... função ... */ }
+        function fetchAndDisplayOutages() { /* ... função ... */ }
+        
+        function updateSelectionMarker(lat, lng) {
+            if (currentMarker) map.removeLayer(currentMarker);
+            currentMarker = L.marker([lat, lng]).addTo(map);
+            document.getElementById('latitude').value = lat.toFixed(6);
+            document.getElementById('longitude').value = lng.toFixed(6);
+            
+            if (recenterButtonElement) {
+                L.DomUtil.removeClass(recenterButtonElement, 'leaflet-disabled');
+            }
+        }
+
+        async function geocodeAddress() { /* ... função ... */ }
 
         document.getElementById('reportForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const submitBtn = document.getElementById('submitBtn');
-            if (!document.getElementById('problemType').value || !document.getElementById('latitude').value) {
-                showStatus('Selecione um local no mapa primeiro.', 'error'); return;
-            }
-            submitBtn.disabled = true; submitBtn.textContent = 'Enviando...';
-            
-            const userName = document.getElementById('userName').value.trim() || "Anônimo";
-            const reportData = { /* ... dados ... */ };
+            // ... (lógica de submit) ...
             try {
-                await db.collection('outages').add(reportData);
-                showStatus('Problema reportado com sucesso!', 'success');
-                document.getElementById('reportForm').reset();
-                if (currentMarker) {
-                    const targetMap = isMobile ? map : map;
-                    if(targetMap) targetMap.removeLayer(currentMarker);
-                    if(mapPreview) mapPreview.removeLayer(currentMarker);
+                // ... (lógica try) ...
+                if (currentMarker) { 
+                    map.removeLayer(currentMarker);
                     currentMarker = null;
-                    // Desativa o botão de recentralizar
                     if (recenterButtonElement) {
                         L.DomUtil.addClass(recenterButtonElement, 'leaflet-disabled');
                     }
                 }
-                submitBtn.classList.remove('ready');
-            } catch (error) {
-                showStatus('Erro ao enviar o reporte. Tente novamente.', 'error');
-            } finally {
-                submitBtn.disabled = false; submitBtn.textContent = 'Reportar Problema';
-            }
+            } catch (error) { /* ... */ } 
+            finally { /* ... */ }
         });
         
-        // ... resto do seu código (deleteOutage, geocodeAddress, etc.) ...
+        async function deleteOutage(docId) { /* ... função ... */ }
+        document.addEventListener('click', function(e) { /* ... listener do resolve-btn ... */ });
+
+        map.on('click', (e) => updateSelectionMarker(e.latlng.lat, e.latlng.lng));
+        document.getElementById('searchBtn').addEventListener('click', geocodeAddress);
+        
+        // ADICIONA O LISTENER PARA O BOTÃO NO FORMULÁRIO
+        document.getElementById('locateBtn').addEventListener('click', locateUser);
+        
+        document.getElementById('address').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); geocodeAddress(); }
+        });
+
+        function showStatus(message, type) { /* ... função ... */ }
+
+        fetchAndDisplayOutages();
     </script>
 </body>
 </html>
