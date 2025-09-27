@@ -23,8 +23,8 @@
             --text-light: #e0e0e0;
             --text-muted: #a0a0a0;
             --border-color: #40405c;
-            --success-color: #ff69b4; /* Nova cor de sucesso (Rosa Vibrante) */
-            --success-hover: #ff4090;  /* Nova cor de hover (Rosa mais escuro) */
+            --success-color: #ff69b4; /* Cor de sucesso (Rosa Vibrante) */
+            --success-hover: #ff4090;  /* Cor de hover (Rosa mais escuro) */
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -427,9 +427,8 @@
         let map; 
         let mapPreview;
         
-        const outageMarkersLayer = L.layerGroup();
         let currentMarker = null;
-        let previewMarker = null; // Marcador para o preview no mobile
+        let previewMarker = null;
         let recenterButtonElement = null;
 
         function initMap(mapId, options) {
@@ -438,7 +437,8 @@
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                 maxZoom: 19
             }).addTo(mapInstance);
-            outageMarkersLayer.addTo(mapInstance);
+            // CADA MAPA AGORA TEM SUA PRÓPRIA CAMADA DE MARCADORES
+            mapInstance.outageMarkersLayer = L.layerGroup().addTo(mapInstance);
             return mapInstance;
         }
         
@@ -475,6 +475,8 @@
                 if (!map) {
                     map = initMap('modal-map', { zoomControl: true });
                     addControlsToMap(map);
+                    // Popula o novo mapa modal com os marcadores já existentes
+                    fetchAndDisplayOutages(true); 
                     map.on('click', (e) => {
                         updateSelectionMarker(e.latlng.lat, e.latlng.lng);
                     });
@@ -517,7 +519,7 @@
                 iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
             }),
             selection: new L.Icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png', /* Ícone Violeta para seleção */
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
                 shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
                 iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
             })
@@ -532,26 +534,53 @@
                 default: return icons.grey;
             }
         }
-        function fetchAndDisplayOutages() {
+        
+        let outageDataCache = []; // Cache para os dados dos problemas
+        
+        // FUNÇÃO MODIFICADA PARA ATUALIZAR OS MAPAS CORRETAMENTE
+        function fetchAndDisplayOutages(forceUpdateAll = false) {
             if (!db) return;
             db.collection('outages').onSnapshot(snapshot => {
-                outageMarkersLayer.clearLayers();
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (!data.latitude || !data.longitude) return;
-                    
-                    const icon = getIconForProblem(data.problemType);
-                    const marker = L.marker([data.latitude, data.longitude], { icon: icon }).addTo(outageMarkersLayer);
-                    
-                    const problemType = sanitizeHTML(data.problemType);
-                    const description = sanitizeHTML(data.description || 'Nenhuma');
-                    const reporterName = sanitizeHTML(data.userName || "Anônimo");
-                    
-                    const popupContent = `<h4>${problemType}</h4><p><strong>Descrição:</strong> ${description}</p><p><strong>Reportado por:</strong> ${reporterName}</p><p><strong>Reportado em:</strong> ${data.timestamp ? data.timestamp.toDate().toLocaleString('pt-BR') : 'Data indisponível'}</p><button class="resolve-btn" data-id="${doc.id}">A Energia Voltou!</button>`;
-                    marker.bindPopup(popupContent);
-                });
+                
+                // Limpa o cache e preenche com os novos dados
+                outageDataCache = [];
+                snapshot.forEach(doc => outageDataCache.push(doc.data()));
+
+                // Atualiza o mapa principal/modal, se existir
+                if (map && map.outageMarkersLayer) {
+                    updateMapMarkers(map, outageDataCache);
+                }
+                
+                // Atualiza o mapa de preview, se existir
+                if (mapPreview && mapPreview.outageMarkersLayer) {
+                    updateMapMarkers(mapPreview, outageDataCache, true); // true para não adicionar popups
+                }
+
             }, error => { console.error("Erro ao buscar dados: ", error); });
         }
+
+        function updateMapMarkers(mapInstance, data, isPreview = false) {
+            mapInstance.outageMarkersLayer.clearLayers();
+            data.forEach(item => {
+                if (!item.latitude || !item.longitude) return;
+                
+                const icon = getIconForProblem(item.problemType);
+                const marker = L.marker([item.latitude, item.longitude], { icon: icon });
+                
+                if (!isPreview) {
+                    const problemType = sanitizeHTML(item.problemType);
+                    const description = sanitizeHTML(item.description || 'Nenhuma');
+                    const reporterName = sanitizeHTML(item.userName || "Anônimo");
+                    const docId = item.id; // Supondo que o ID do documento seja passado nos dados
+                    
+                    const popupContent = `<h4>${problemType}</h4><p><strong>Descrição:</strong> ${description}</p><p><strong>Reportado por:</strong> ${reporterName}</p><p><strong>Reportado em:</strong> ${item.timestamp ? item.timestamp.toDate().toLocaleString('pt-BR') : 'Data indisponível'}</p><button class="resolve-btn" data-id="${docId}">A Energia Voltou!</button>`;
+                    marker.bindPopup(popupContent);
+                }
+                
+                marker.addTo(mapInstance.outageMarkersLayer);
+            });
+        }
+
         function updateSelectionMarker(lat, lng) {
             const activeMap = isMobile ? map : map;
             
@@ -559,16 +588,12 @@
             document.getElementById('longitude').value = lng.toFixed(6);
 
             if (activeMap) {
-                if (currentMarker) {
-                    activeMap.removeLayer(currentMarker);
-                }
+                if (currentMarker) activeMap.removeLayer(currentMarker);
                 currentMarker = L.marker([lat, lng], { icon: icons.selection }).addTo(activeMap);
             }
             
             if (mapPreview) {
-                if (previewMarker) {
-                    mapPreview.removeLayer(previewMarker);
-                }
+                if (previewMarker) mapPreview.removeLayer(previewMarker);
                 previewMarker = L.marker([lat, lng], { icon: icons.selection }).addTo(mapPreview);
                 mapPreview.setView([lat, lng], 15);
             }
@@ -721,6 +746,7 @@
             }, 4000);
         }
 
+        // Inicia a busca e exibição de problemas
         fetchAndDisplayOutages();
     </script>
 </body>
