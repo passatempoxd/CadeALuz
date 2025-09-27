@@ -226,7 +226,6 @@
             background-color: var(--container-dark);
         }
         
-        /* NOVO: Estilos para o botão de localização no formulário e o divisor */
         .location-divider {
             display: flex;
             align-items: center;
@@ -259,8 +258,7 @@
             border-color: var(--primary-accent);
             color: var(--primary-accent);
         }
-
-        /* --- ESTILOS PARA O MAPA EXPANSÍVEL NO CELULAR --- */
+        
         .map-preview { display: none; }
         .map-modal {
             display: none;
@@ -399,11 +397,29 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <script>
-        const firebaseConfig = { /* ... suas chaves ... */ };
+        // --- SEÇÃO DE JAVASCRIPT REVISADA E UNIFICADA ---
+        const firebaseConfig = {
+            apiKey: "__FIREBASE_API_KEY__",
+            authDomain: "__FIREBASE_AUTH_DOMAIN__",
+            projectId: "__FIREBASE_PROJECT_ID__",
+            storageBucket: "__FIREBASE_STORAGE_BUCKET__",
+            messagingSenderId: "__FIREBASE_MESSAGING_SENDER_ID__",
+            appId: "__FIREBASE_APP_ID__"
+        };
         let db;
-        try { /* ... inicialização ... */ } catch (error) { /* ... */ }
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+        } catch (error) {
+             // A função showStatus pode não estar pronta, então usamos um alert como fallback.
+            alert('Erro crítico: A configuração do Firebase é inválida.');
+        }
 
-        function sanitizeHTML(text) { /* ... função ... */ }
+        function sanitizeHTML(text) {
+            const temp = document.createElement('div');
+            temp.textContent = text;
+            return temp.innerHTML;
+        }
 
         const initialCoords = [-23.5244, -46.8354];
         const isMobile = window.innerWidth <= 1200;
@@ -414,9 +430,16 @@
         let currentMarker = null;
         let recenterButtonElement = null;
 
-        function initMap(mapId, options) { /* ... sua função ... */ }
-
-        // ADICIONA OS DOIS BOTÕES AO MAPA
+        function initMap(mapId, options) {
+            const mapInstance = L.map(mapId, options).setView(initialCoords, options.zoom || 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(mapInstance);
+            outageMarkersLayer.addTo(mapInstance);
+            return mapInstance;
+        }
+        
         function addControlsToMap(mapInstance) {
             const LocateControl = L.Control.extend({
                 onAdd: function() {
@@ -440,13 +463,89 @@
             new RecenterControl({ position: 'topleft' }).addTo(mapInstance);
         }
 
-        if (isMobile) { /* ... lógica mobile ... */ } 
-        else { /* ... lógica desktop ... */ }
+        if (isMobile) {
+            mapPreview = initMap('map-preview', {
+                dragging: false, zoomControl: false, scrollWheelZoom: false, doubleClickZoom: false, zoom: 13
+            });
+            
+            document.getElementById('map-preview').addEventListener('click', () => {
+                document.getElementById('map-modal').classList.add('active');
+                if (!map) {
+                    map = initMap('modal-map', { zoomControl: true });
+                    addControlsToMap(map);
+                    map.on('click', (e) => {
+                        updateSelectionMarker(e.latlng.lat, e.latlng.lng);
+                        document.getElementById('map-modal').classList.remove('active');
+                    });
+                }
+                map.invalidateSize();
+            });
+            document.getElementById('modal-close-btn').addEventListener('click', () => {
+                document.getElementById('map-modal').classList.remove('active');
+            });
 
-        const icons = { /* ... seus ícones ... */ };
-        function getIconForProblem(problemType) { /* ... sua função ... */ }
-        function fetchAndDisplayOutages() { /* ... sua função ... */ }
-        
+        } else {
+            map = initMap('map', { zoomControl: true });
+            addControlsToMap(map);
+            map.on('click', (e) => updateSelectionMarker(e.latlng.lat, e.latlng.lng));
+        }
+
+        const icons = {
+            red: new L.Icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+            }),
+            orange: new L.Icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+            }),
+            yellow: new L.Icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+            }),
+            blue: new L.Icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+            }),
+            grey: new L.Icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+            })
+        };
+        function getIconForProblem(problemType) {
+            switch (problemType) {
+                case "Falta de Energia Total": return icons.red;
+                case "Poste com Faíscas": return icons.orange;
+                case "Fio Caído na Rua": return icons.yellow;
+                case "Luz Piscando": return icons.blue;
+                default: return icons.grey;
+            }
+        }
+        function fetchAndDisplayOutages() {
+            if (!db) return;
+            db.collection('outages').onSnapshot(snapshot => {
+                outageMarkersLayer.clearLayers();
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (!data.latitude || !data.longitude) return;
+                    
+                    const icon = getIconForProblem(data.problemType);
+                    const marker = L.marker([data.latitude, data.longitude], { icon: icon }).addTo(outageMarkersLayer);
+                    
+                    const problemType = sanitizeHTML(data.problemType);
+                    const description = sanitizeHTML(data.description || 'Nenhuma');
+                    const reporterName = sanitizeHTML(data.userName || "Anônimo");
+                    
+                    const popupContent = `<h4>${problemType}</h4><p><strong>Descrição:</strong> ${description}</p><p><strong>Reportado por:</strong> ${reporterName}</p><p><strong>Reportado em:</strong> ${data.timestamp ? data.timestamp.toDate().toLocaleString('pt-BR') : 'Data indisponível'}</p><button class="resolve-btn" data-id="${doc.id}">A Energia Voltou!</button>`;
+                    marker.bindPopup(popupContent);
+                });
+            }, error => { console.error("Erro ao buscar dados: ", error); });
+        }
         function updateSelectionMarker(lat, lng) {
             const activeMapInstance = isMobile ? map : map;
             if (currentMarker) {
@@ -462,17 +561,78 @@
             }
         }
         
-        function locateUser() { /* ... sua função ... */ }
-        function recenterMap() { /* ... sua função ... */ }
+        function locateUser() {
+            const targetMap = isMobile ? map : map;
+            if (!navigator.geolocation) { showStatus('Geolocalização não é suportada.', 'error'); return; }
+            showStatus('Buscando sua localização...', 'success');
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    targetMap.setView([lat, lng], 16);
+                    updateSelectionMarker(lat, lng);
+                    showStatus('Localização encontrada!', 'success');
+                    if(isMobile) document.getElementById('map-modal').classList.remove('active');
+                },
+                (error) => {
+                    let message = 'Não foi possível obter sua localização.';
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED: message = 'Você negou o pedido de Geolocalização.'; break;
+                        case error.POSITION_UNAVAILABLE: message = 'Informação de localização não está disponível.'; break;
+                        case error.TIMEOUT: message = 'O pedido de geolocalização expirou.'; break;
+                    }
+                    showStatus(message, 'error');
+                    targetMap.setView(initialCoords, 14);
+                }
+            );
+        }
+
+        function recenterMap() {
+            const targetMap = isMobile ? map : map;
+            if (currentMarker) {
+                targetMap.setView(currentMarker.getLatLng(), 16);
+            } else {
+                targetMap.setView(initialCoords, 14);
+            }
+        }
+
         async function geocodeAddress() { /* ... sua função ... */ }
 
-        document.getElementById('reportForm').addEventListener('submit', async function(e) { /* ... sua função ... */ });
+        document.getElementById('reportForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            if (!document.getElementById('problemType').value || !document.getElementById('latitude').value) {
+                showStatus('Selecione um local no mapa primeiro.', 'error'); return;
+            }
+            submitBtn.disabled = true; submitBtn.textContent = 'Enviando...';
+            
+            const userName = document.getElementById('userName').value.trim() || "Anônimo";
+            const reportData = { /* ... dados ... */ };
+            try {
+                await db.collection('outages').add(reportData);
+                showStatus('Problema reportado com sucesso!', 'success');
+                document.getElementById('reportForm').reset();
+                if (currentMarker) {
+                    const targetMap = isMobile ? map : map;
+                    if(targetMap && targetMap.hasLayer(currentMarker)) {
+                         targetMap.removeLayer(currentMarker);
+                    }
+                    if(mapPreview && mapPreview.hasLayer && mapPreview.hasLayer(currentMarker)){
+                        mapPreview.removeLayer(currentMarker)
+                    }
+                    currentMarker = null;
+                    if (recenterButtonElement) {
+                        L.DomUtil.addClass(recenterButtonElement, 'leaflet-disabled');
+                    }
+                }
+            } catch (error) { /* ... */ } 
+            finally { /* ... */ }
+        });
+        
         async function deleteOutage(docId) { /* ... sua função ... */ }
         document.addEventListener('click', function(e) { /* ... listener ... */ });
 
-        // ADICIONA O EVENT LISTENER PARA O NOVO BOTÃO DO FORMULÁRIO
         document.getElementById('locateBtn').addEventListener('click', locateUser);
-        
         document.getElementById('searchBtn').addEventListener('click', geocodeAddress);
         document.getElementById('address').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') { e.preventDefault(); geocodeAddress(); }
