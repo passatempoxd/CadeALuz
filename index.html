@@ -122,7 +122,7 @@
         .address-search-group { display: flex; gap: 10px; }
         .address-search-group input { flex-grow: 1; }
         
-        .search-btn, .submit-btn, .resolve-btn {
+        .search-btn, .submit-btn, .resolve-btn, .locate-btn {
             border: none;
             border-radius: 10px;
             cursor: pointer;
@@ -225,6 +225,39 @@
         .leaflet-control-locate a:hover, .leaflet-control-recenter a:hover {
             background-color: var(--container-dark);
         }
+        
+        .location-divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 15px 0;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .location-divider::before, .location-divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .location-divider:not(:empty)::before { margin-right: .5em; }
+        .location-divider:not(:empty)::after { margin-left: .5em; }
+        
+        .locate-btn {
+            width: 100%;
+            padding: 10px 15px;
+            background: transparent;
+            color: var(--text-light);
+            border: 2px solid var(--input-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .locate-btn:hover {
+            border-color: var(--primary-accent);
+            color: var(--primary-accent);
+        }
 
         .map-preview { display: none; }
         .map-modal {
@@ -298,6 +331,14 @@
                 <p>Selecione a localização e preencha os detalhes.</p>
                 <form id="reportForm">
                     <div class="form-group">
+                         <button type="button" id="locateBtn" class="locate-btn">
+                            🎯 Use minha localização atual
+                        </button>
+                    </div>
+                    <div class="location-divider">
+                        <span>OU</span>
+                    </div>
+                    <div class="form-group">
                         <label for="address">🔎 Endereço:</label>
                         <div class="address-search-group">
                             <input type="text" id="address" placeholder="Rua, Número, Cidade ou CEP">
@@ -356,8 +397,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <script>
-        // --- SEÇÃO DE JAVASCRIPT COMPLETA E RESTAURADA ---
-
+        // --- SEÇÃO DE JAVASCRIPT COMPLETA E REVISADA ---
         const firebaseConfig = {
             apiKey: "__FIREBASE_API_KEY__",
             authDomain: "__FIREBASE_AUTH_DOMAIN__",
@@ -505,13 +545,13 @@
             }, error => { console.error("Erro ao buscar dados: ", error); });
         }
         function updateSelectionMarker(lat, lng) {
-            const activeMapInstance = isMobile ? map : map;
-            if (currentMarker) {
-                if (activeMapInstance && activeMapInstance.hasLayer(currentMarker)) {
+            const activeMapInstance = isMobile && map ? map : (isMobile ? null : map);
+            if(activeMapInstance){
+                if (currentMarker && activeMapInstance.hasLayer(currentMarker)) {
                     activeMapInstance.removeLayer(currentMarker);
                 }
+                currentMarker = L.marker([lat, lng]).addTo(activeMapInstance);
             }
-            currentMarker = L.marker([lat, lng]).addTo(activeMapInstance);
             document.getElementById('latitude').value = lat.toFixed(6);
             document.getElementById('longitude').value = lng.toFixed(6);
             if (recenterButtonElement) {
@@ -521,6 +561,7 @@
         
         function locateUser() {
             const targetMap = isMobile ? map : map;
+            if(!targetMap) { showStatus('Abra o mapa primeiro para usar a localização.', 'error'); return; }
             if (!navigator.geolocation) { showStatus('Geolocalização não é suportada.', 'error'); return; }
             showStatus('Buscando sua localização...', 'success');
             navigator.geolocation.getCurrentPosition(
@@ -547,6 +588,7 @@
 
         function recenterMap() {
             const targetMap = isMobile ? map : map;
+            if(!targetMap) { return; }
             if (currentMarker) {
                 targetMap.setView(currentMarker.getLatLng(), 16);
             } else {
@@ -555,6 +597,8 @@
         }
 
         async function geocodeAddress() {
+            const targetMap = isMobile ? map : map;
+            if(!targetMap) { showStatus('Abra o mapa primeiro para buscar um endereço.', 'error'); return; }
             const userInput = document.getElementById('address').value.trim();
             if (!userInput) { showStatus('Por favor, digite um endereço para buscar.', 'error'); return; }
             const cepRegex = /^\d{5}-?\d{3}$/;
@@ -575,7 +619,6 @@
                 const nominatimData = await nominatimResponse.json();
                 if (nominatimData && nominatimData.length > 0) {
                     const { lat, lon } = nominatimData[0];
-                    const targetMap = isMobile ? map : map;
                     targetMap.setView([parseFloat(lat), parseFloat(lon)], 17);
                     updateSelectionMarker(parseFloat(lat), parseFloat(lon));
                     if(isMobile) document.getElementById('map-modal').classList.remove('active');
@@ -641,6 +684,7 @@
             }
         });
 
+        document.getElementById('locateBtn').addEventListener('click', locateUser);
         document.getElementById('searchBtn').addEventListener('click', geocodeAddress);
         document.getElementById('address').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') { e.preventDefault(); geocodeAddress(); }
@@ -648,6 +692,7 @@
 
         function showStatus(message, type) {
             const statusEl = document.getElementById('statusMessage');
+            if (!statusEl) return;
             statusEl.textContent = message;
             statusEl.className = `status-message ${type} show`;
             setTimeout(() => {
