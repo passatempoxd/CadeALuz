@@ -23,8 +23,8 @@
             --text-light: #e0e0e0;
             --text-muted: #a0a0a0;
             --border-color: #40405c;
-            --success-color: #ff69b4; /* Cor de sucesso (Rosa Vibrante) */
-            --success-hover: #ff4090;  /* Cor de hover (Rosa mais escuro) */
+            --success-color: #8e2de2; /* Nova cor de sucesso (Roxo do tema) */
+            --success-hover: #7b22c7;  /* Nova cor de hover (Roxo mais escuro) */
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -183,7 +183,7 @@
             white-space: nowrap;
         }
         .status-message.show { opacity: 1; visibility: visible; transform: translate(-50%, -50%); }
-        .status-message.success { background: rgba(255, 105, 180, 0.9); } /* RGBA do Rosa Vibrante */
+        .status-message.success { background: rgba(142, 45, 226, 0.9); } /* RGBA do Roxo do Tema */
         .status-message.error { background: rgba(220, 53, 69, 0.9); }
         
         #map-legend {
@@ -437,7 +437,6 @@
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                 maxZoom: 19
             }).addTo(mapInstance);
-            // CADA MAPA AGORA TEM SUA PRÓPRIA CAMADA DE MARCADORES
             mapInstance.outageMarkersLayer = L.layerGroup().addTo(mapInstance);
             return mapInstance;
         }
@@ -475,8 +474,7 @@
                 if (!map) {
                     map = initMap('modal-map', { zoomControl: true });
                     addControlsToMap(map);
-                    // Popula o novo mapa modal com os marcadores já existentes
-                    fetchAndDisplayOutages(true); 
+                    updateMapMarkers(map, outageDataCache); 
                     map.on('click', (e) => {
                         updateSelectionMarker(e.latlng.lat, e.latlng.lng);
                     });
@@ -535,25 +533,25 @@
             }
         }
         
-        let outageDataCache = []; // Cache para os dados dos problemas
+        let outageDataCache = [];
         
-        // FUNÇÃO MODIFICADA PARA ATUALIZAR OS MAPAS CORRETAMENTE
-        function fetchAndDisplayOutages(forceUpdateAll = false) {
+        function fetchAndDisplayOutages() {
             if (!db) return;
             db.collection('outages').onSnapshot(snapshot => {
                 
-                // Limpa o cache e preenche com os novos dados
                 outageDataCache = [];
-                snapshot.forEach(doc => outageDataCache.push(doc.data()));
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    data.id = doc.id; // Adiciona o ID do documento aos dados
+                    outageDataCache.push(data);
+                });
 
-                // Atualiza o mapa principal/modal, se existir
                 if (map && map.outageMarkersLayer) {
                     updateMapMarkers(map, outageDataCache);
                 }
                 
-                // Atualiza o mapa de preview, se existir
                 if (mapPreview && mapPreview.outageMarkersLayer) {
-                    updateMapMarkers(mapPreview, outageDataCache, true); // true para não adicionar popups
+                    updateMapMarkers(mapPreview, outageDataCache, true);
                 }
 
             }, error => { console.error("Erro ao buscar dados: ", error); });
@@ -571,7 +569,7 @@
                     const problemType = sanitizeHTML(item.problemType);
                     const description = sanitizeHTML(item.description || 'Nenhuma');
                     const reporterName = sanitizeHTML(item.userName || "Anônimo");
-                    const docId = item.id; // Supondo que o ID do documento seja passado nos dados
+                    const docId = item.id;
                     
                     const popupContent = `<h4>${problemType}</h4><p><strong>Descrição:</strong> ${description}</p><p><strong>Reportado por:</strong> ${reporterName}</p><p><strong>Reportado em:</strong> ${item.timestamp ? item.timestamp.toDate().toLocaleString('pt-BR') : 'Data indisponível'}</p><button class="resolve-btn" data-id="${docId}">A Energia Voltou!</button>`;
                     marker.bindPopup(popupContent);
@@ -746,7 +744,6 @@
             }, 4000);
         }
 
-        // Inicia a busca e exibição de problemas
         fetchAndDisplayOutages();
     </script>
 </body>
