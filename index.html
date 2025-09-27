@@ -122,7 +122,7 @@
         .address-search-group { display: flex; gap: 10px; }
         .address-search-group input { flex-grow: 1; }
         
-        .search-btn, .submit-btn, .resolve-btn, .locate-btn {
+        .search-btn, .submit-btn, .resolve-btn {
             border: none;
             border-radius: 10px;
             cursor: pointer;
@@ -225,40 +225,7 @@
         .leaflet-control-locate a:hover, .leaflet-control-recenter a:hover {
             background-color: var(--container-dark);
         }
-        
-        .location-divider {
-            display: flex;
-            align-items: center;
-            text-align: center;
-            margin: 15px 0;
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-        .location-divider::before, .location-divider::after {
-            content: '';
-            flex: 1;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .location-divider:not(:empty)::before { margin-right: .5em; }
-        .location-divider:not(:empty)::after { margin-left: .5em; }
-        
-        .locate-btn {
-            width: 100%;
-            padding: 10px 15px;
-            background: transparent;
-            color: var(--text-light);
-            border: 2px solid var(--input-dark);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .locate-btn:hover {
-            border-color: var(--primary-accent);
-            color: var(--primary-accent);
-        }
-        
+
         .map-preview { display: none; }
         .map-modal {
             display: none;
@@ -331,14 +298,6 @@
                 <p>Selecione a localização e preencha os detalhes.</p>
                 <form id="reportForm">
                     <div class="form-group">
-                         <button type="button" id="locateBtn" class="locate-btn">
-                            🎯 Use minha localização atual
-                        </button>
-                    </div>
-                    <div class="location-divider">
-                        <span>OU</span>
-                    </div>
-                    <div class="form-group">
                         <label for="address">🔎 Endereço:</label>
                         <div class="address-search-group">
                             <input type="text" id="address" placeholder="Rua, Número, Cidade ou CEP">
@@ -397,7 +356,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <script>
-        // --- SEÇÃO DE JAVASCRIPT REVISADA E UNIFICADA ---
+        // --- SEÇÃO DE JAVASCRIPT COMPLETA E RESTAURADA ---
+
         const firebaseConfig = {
             apiKey: "__FIREBASE_API_KEY__",
             authDomain: "__FIREBASE_AUTH_DOMAIN__",
@@ -410,8 +370,7 @@
         try {
             firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
-        } catch (error) {
-             // A função showStatus pode não estar pronta, então usamos um alert como fallback.
+        } catch (error) { 
             alert('Erro crítico: A configuração do Firebase é inválida.');
         }
 
@@ -483,7 +442,6 @@
             document.getElementById('modal-close-btn').addEventListener('click', () => {
                 document.getElementById('map-modal').classList.remove('active');
             });
-
         } else {
             map = initMap('map', { zoomControl: true });
             addControlsToMap(map);
@@ -596,7 +554,34 @@
             }
         }
 
-        async function geocodeAddress() { /* ... sua função ... */ }
+        async function geocodeAddress() {
+            const userInput = document.getElementById('address').value.trim();
+            if (!userInput) { showStatus('Por favor, digite um endereço para buscar.', 'error'); return; }
+            const cepRegex = /^\d{5}-?\d{3}$/;
+            let addressToSearch = userInput;
+            if (cepRegex.test(userInput)) {
+                try {
+                    const cep = userInput.replace('-', '');
+                    const viaCepResponse = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                    const cepData = await viaCepResponse.json();
+                    if (cepData.erro) { showStatus('CEP não encontrado.', 'error'); return; }
+                    addressToSearch = `${cepData.logradouro}, ${cepData.localidade}, ${cepData.uf}`;
+                } catch (error) { showStatus('Erro ao consultar o CEP. Tente o endereço.', 'error'); return; }
+            }
+            const viewbox = '-47.2,-24.0,-46.0,-23.2';
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressToSearch)}&countrycodes=br&viewbox=${viewbox}&bounded=1`;
+            try {
+                const nominatimResponse = await fetch(url);
+                const nominatimData = await nominatimResponse.json();
+                if (nominatimData && nominatimData.length > 0) {
+                    const { lat, lon } = nominatimData[0];
+                    const targetMap = isMobile ? map : map;
+                    targetMap.setView([parseFloat(lat), parseFloat(lon)], 17);
+                    updateSelectionMarker(parseFloat(lat), parseFloat(lon));
+                    if(isMobile) document.getElementById('map-modal').classList.remove('active');
+                } else { showStatus('Endereço não encontrado na região.', 'error'); }
+            } catch (error) { showStatus('Ocorreu um erro ao buscar o endereço.', 'error'); }
+        }
 
         document.getElementById('reportForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -605,9 +590,15 @@
                 showStatus('Selecione um local no mapa primeiro.', 'error'); return;
             }
             submitBtn.disabled = true; submitBtn.textContent = 'Enviando...';
-            
             const userName = document.getElementById('userName').value.trim() || "Anônimo";
-            const reportData = { /* ... dados ... */ };
+            const reportData = {
+                problemType: document.getElementById('problemType').value,
+                description: document.getElementById('description').value.trim(),
+                latitude: parseFloat(document.getElementById('latitude').value),
+                longitude: parseFloat(document.getElementById('longitude').value),
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                userName: userName
+            };
             try {
                 await db.collection('outages').add(reportData);
                 showStatus('Problema reportado com sucesso!', 'success');
@@ -618,27 +609,51 @@
                          targetMap.removeLayer(currentMarker);
                     }
                     if(mapPreview && mapPreview.hasLayer && mapPreview.hasLayer(currentMarker)){
-                        mapPreview.removeLayer(currentMarker)
+                        mapPreview.removeLayer(currentMarker);
                     }
                     currentMarker = null;
                     if (recenterButtonElement) {
                         L.DomUtil.addClass(recenterButtonElement, 'leaflet-disabled');
                     }
                 }
-            } catch (error) { /* ... */ } 
-            finally { /* ... */ }
+            } catch (error) {
+                showStatus('Erro ao enviar o reporte. Tente novamente.', 'error');
+            } finally {
+                submitBtn.disabled = false; submitBtn.textContent = 'Reportar Problema';
+            }
         });
         
-        async function deleteOutage(docId) { /* ... sua função ... */ }
-        document.addEventListener('click', function(e) { /* ... listener ... */ });
+        async function deleteOutage(docId) {
+            if (!db || !docId) return;
+            if (!confirm('Você tem certeza que a energia neste local foi restabelecida?')) { return; }
+            try {
+                await db.collection('outages').doc(docId).delete();
+                showStatus('Obrigado por avisar! Ponto removido do mapa.', 'success');
+            } catch (error) {
+                showStatus('Ocorreu um erro ao remover o ponto.', 'error');
+            }
+        }
 
-        document.getElementById('locateBtn').addEventListener('click', locateUser);
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.matches('.resolve-btn')) {
+                const docId = e.target.dataset.id;
+                deleteOutage(docId);
+            }
+        });
+
         document.getElementById('searchBtn').addEventListener('click', geocodeAddress);
         document.getElementById('address').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') { e.preventDefault(); geocodeAddress(); }
         });
 
-        function showStatus(message, type) { /* ... sua função ... */ }
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `status-message ${type} show`;
+            setTimeout(() => {
+                statusEl.classList.remove('show');
+            }, 4000);
+        }
 
         fetchAndDisplayOutages();
     </script>
