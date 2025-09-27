@@ -23,8 +23,8 @@
             --text-light: #e0e0e0;
             --text-muted: #a0a0a0;
             --border-color: #40405c;
-            --success-color: #8e2de2; /* Roxo do tema */
-            --success-hover: #7b22c7;  /* Roxo mais escuro */
+            --success-color: #8e2de2; /* Nova cor de sucesso (Roxo do tema) */
+            --success-hover: #7b22c7;  /* Nova cor de hover (Roxo mais escuro) */
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -183,10 +183,8 @@
             white-space: nowrap;
         }
         .status-message.show { opacity: 1; visibility: visible; transform: translate(-50%, -50%); }
-        .status-message.success { background: rgba(142, 45, 226, 0.9); }
+        .status-message.success { background: rgba(142, 45, 226, 0.9); } /* RGBA do Roxo do Tema */
         .status-message.error { background: rgba(220, 53, 69, 0.9); }
-        /* NOVA COR PARA A MENSAGEM DE "BUSCANDO..." */
-        .status-message.info { background: rgba(52, 152, 219, 0.9); }
         
         #map-legend {
             position: absolute;
@@ -544,7 +542,7 @@
                 outageDataCache = [];
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    data.id = doc.id;
+                    data.id = doc.id; // Adiciona o ID do documento aos dados
                     outageDataCache.push(data);
                 });
 
@@ -605,21 +603,9 @@
         
         function locateUser() {
             const targetMap = isMobile ? map : map;
-            if (!targetMap) {
-                showStatus('Abra o mapa primeiro para usar a localização.', 'error');
-                return;
-            }
-            if (!navigator.geolocation) {
-                showStatus('Geolocalização não é suportada.', 'error');
-                return;
-            }
-
-            const statusEl = document.getElementById('statusMessage');
-            if (statusEl.hideTimeout) clearTimeout(statusEl.hideTimeout);
-            
-            statusEl.textContent = 'Buscando sua localização...';
-            statusEl.className = 'status-message info show';
-
+            if(!targetMap) { showStatus('Abra o mapa primeiro para usar a localização.', 'error'); return; }
+            if (!navigator.geolocation) { showStatus('Geolocalização não é suportada.', 'error'); return; }
+            showStatus('Buscando sua localização...', 'success');
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const lat = position.coords.latitude;
@@ -631,15 +617,9 @@
                 (error) => {
                     let message = 'Não foi possível obter sua localização.';
                     switch (error.code) {
-                        case error.PERMISSION_DENIED:
-                            message = 'Você negou o pedido de Geolocalização.';
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            message = 'Informação de localização não está disponível.';
-                            break;
-                        case error.TIMEOUT:
-                            message = 'O pedido de geolocalização expirou.';
-                            break;
+                        case error.PERMISSION_DENIED: message = 'Você negou o pedido de Geolocalização.'; break;
+                        case error.POSITION_UNAVAILABLE: message = 'Informação de localização não está disponível.'; break;
+                        case error.TIMEOUT: message = 'O pedido de geolocalização expirou.'; break;
                     }
                     showStatus(message, 'error');
                     targetMap.setView(initialCoords, 14);
@@ -757,13 +737,9 @@
         function showStatus(message, type) {
             const statusEl = document.getElementById('statusMessage');
             if (!statusEl) return;
-            
-            if (statusEl.hideTimeout) clearTimeout(statusEl.hideTimeout);
-
             statusEl.textContent = message;
             statusEl.className = `status-message ${type} show`;
-            
-            statusEl.hideTimeout = setTimeout(() => {
+            setTimeout(() => {
                 statusEl.classList.remove('show');
             }, 4000);
         }
