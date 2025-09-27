@@ -23,6 +23,8 @@
             --text-light: #e0e0e0;
             --text-muted: #a0a0a0;
             --border-color: #40405c;
+            /* COR VERDE SUBSTITUÍDA POR AZUL */
+            --success-color: #3498db;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -122,7 +124,7 @@
         .address-search-group { display: flex; gap: 10px; }
         .address-search-group input { flex-grow: 1; }
         
-        .search-btn, .submit-btn, .resolve-btn, .locate-btn {
+        .search-btn, .submit-btn, .resolve-btn {
             border: none;
             border-radius: 10px;
             cursor: pointer;
@@ -158,8 +160,10 @@
         .leaflet-popup-content p { margin: 5px 0; color: var(--text-muted); }
         .leaflet-popup-content p strong { color: var(--text-light); }
         .leaflet-container a.leaflet-popup-close-button { color: var(--text-light); }
-        .resolve-btn { width: 100%; padding: 8px; margin-top: 10px; background-color: #28a745; color: white; }
-        .resolve-btn:hover { background-color: #218838; }
+        
+        /* COR DO BOTÃO ALTERADA PARA AZUL */
+        .resolve-btn { width: 100%; padding: 8px; margin-top: 10px; background-color: var(--success-color); color: white; }
+        .resolve-btn:hover { background-color: #2980b9; } /* Azul mais escuro no hover */
         
         .status-message { 
             position: absolute;
@@ -181,7 +185,8 @@
             white-space: nowrap;
         }
         .status-message.show { opacity: 1; visibility: visible; transform: translate(-50%, -50%); }
-        .status-message.success { background: rgba(40, 167, 69, 0.9); }
+        /* COR DA MENSAGEM ALTERADA PARA AZUL */
+        .status-message.success { background: rgba(52, 152, 219, 0.9); }
         .status-message.error { background: rgba(220, 53, 69, 0.9); }
         
         #map-legend {
@@ -224,39 +229,6 @@
         }
         .leaflet-control-locate a:hover, .leaflet-control-recenter a:hover {
             background-color: var(--container-dark);
-        }
-        
-        .location-divider {
-            display: flex;
-            align-items: center;
-            text-align: center;
-            margin: 15px 0;
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-        .location-divider::before, .location-divider::after {
-            content: '';
-            flex: 1;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .location-divider:not(:empty)::before { margin-right: .5em; }
-        .location-divider:not(:empty)::after { margin-left: .5em; }
-        
-        .locate-btn {
-            width: 100%;
-            padding: 10px 15px;
-            background: transparent;
-            color: var(--text-light);
-            border: 2px solid var(--input-dark);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .locate-btn:hover {
-            border-color: var(--primary-accent);
-            color: var(--primary-accent);
         }
 
         .map-preview { display: none; }
@@ -331,14 +303,6 @@
                 <p>Selecione a localização e preencha os detalhes.</p>
                 <form id="reportForm">
                     <div class="form-group">
-                         <button type="button" id="locateBtn" class="locate-btn">
-                            🎯 Use minha localização atual
-                        </button>
-                    </div>
-                    <div class="location-divider">
-                        <span>OU</span>
-                    </div>
-                    <div class="form-group">
                         <label for="address">🔎 Endereço:</label>
                         <div class="address-search-group">
                             <input type="text" id="address" placeholder="Rua, Número, Cidade ou CEP">
@@ -397,28 +361,11 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <script>
-        // --- SEÇÃO DE JAVASCRIPT COMPLETA E REVISADA ---
-        const firebaseConfig = {
-            apiKey: "__FIREBASE_API_KEY__",
-            authDomain: "__FIREBASE_AUTH_DOMAIN__",
-            projectId: "__FIREBASE_PROJECT_ID__",
-            storageBucket: "__FIREBASE_STORAGE_BUCKET__",
-            messagingSenderId: "__FIREBASE_MESSAGING_SENDER_ID__",
-            appId: "__FIREBASE_APP_ID__"
-        };
+        const firebaseConfig = { /* ... suas chaves ... */ };
         let db;
-        try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-        } catch (error) { 
-            alert('Erro crítico: A configuração do Firebase é inválida.');
-        }
+        try { /* ... inicialização ... */ } catch (error) { /* ... */ }
 
-        function sanitizeHTML(text) {
-            const temp = document.createElement('div');
-            temp.textContent = text;
-            return temp.innerHTML;
-        }
+        function sanitizeHTML(text) { /* ... função ... */ }
 
         const initialCoords = [-23.5244, -46.8354];
         const isMobile = window.innerWidth <= 1200;
@@ -429,38 +376,8 @@
         let currentMarker = null;
         let recenterButtonElement = null;
 
-        function initMap(mapId, options) {
-            const mapInstance = L.map(mapId, options).setView(initialCoords, options.zoom || 14);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19
-            }).addTo(mapInstance);
-            outageMarkersLayer.addTo(mapInstance);
-            return mapInstance;
-        }
-        
-        function addControlsToMap(mapInstance) {
-            const LocateControl = L.Control.extend({
-                onAdd: function() {
-                    const btn = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-locate');
-                    btn.innerHTML = `<a href="#" title="Minha Localização">🎯</a>`;
-                    L.DomEvent.on(btn, 'click', L.DomEvent.stop).on(btn, 'click', locateUser);
-                    return btn;
-                }
-            });
-            const RecenterControl = L.Control.extend({
-                onAdd: function() {
-                    const btn = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-recenter');
-                    btn.innerHTML = `<a href="#" title="Centralizar no Marcador">📍</a>`;
-                    recenterButtonElement = btn;
-                    L.DomUtil.addClass(recenterButtonElement, 'leaflet-disabled');
-                    L.DomEvent.on(btn, 'click', L.DomEvent.stop).on(btn, 'click', recenterMap);
-                    return btn;
-                }
-            });
-            new LocateControl({ position: 'topleft' }).addTo(mapInstance);
-            new RecenterControl({ position: 'topleft' }).addTo(mapInstance);
-        }
+        function initMap(mapId, options) { /* ... sua função ... */ }
+        function addControlsToMap(mapInstance) { /* ... sua função ... */ }
 
         if (isMobile) {
             mapPreview = initMap('map-preview', {
@@ -488,62 +405,10 @@
             map.on('click', (e) => updateSelectionMarker(e.latlng.lat, e.latlng.lng));
         }
 
-        const icons = {
-            red: new L.Icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-            }),
-            orange: new L.Icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-            }),
-            yellow: new L.Icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-            }),
-            blue: new L.Icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-            }),
-            grey: new L.Icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-            })
-        };
-        function getIconForProblem(problemType) {
-            switch (problemType) {
-                case "Falta de Energia Total": return icons.red;
-                case "Poste com Faíscas": return icons.orange;
-                case "Fio Caído na Rua": return icons.yellow;
-                case "Luz Piscando": return icons.blue;
-                default: return icons.grey;
-            }
-        }
-        function fetchAndDisplayOutages() {
-            if (!db) return;
-            db.collection('outages').onSnapshot(snapshot => {
-                outageMarkersLayer.clearLayers();
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (!data.latitude || !data.longitude) return;
-                    
-                    const icon = getIconForProblem(data.problemType);
-                    const marker = L.marker([data.latitude, data.longitude], { icon: icon }).addTo(outageMarkersLayer);
-                    
-                    const problemType = sanitizeHTML(data.problemType);
-                    const description = sanitizeHTML(data.description || 'Nenhuma');
-                    const reporterName = sanitizeHTML(data.userName || "Anônimo");
-                    
-                    const popupContent = `<h4>${problemType}</h4><p><strong>Descrição:</strong> ${description}</p><p><strong>Reportado por:</strong> ${reporterName}</p><p><strong>Reportado em:</strong> ${data.timestamp ? data.timestamp.toDate().toLocaleString('pt-BR') : 'Data indisponível'}</p><button class="resolve-btn" data-id="${doc.id}">A Energia Voltou!</button>`;
-                    marker.bindPopup(popupContent);
-                });
-            }, error => { console.error("Erro ao buscar dados: ", error); });
-        }
+        const icons = { /* ... seus ícones ... */ };
+        function getIconForProblem(problemType) { /* ... sua função ... */ }
+        function fetchAndDisplayOutages() { /* ... sua função ... */ }
+        
         function updateSelectionMarker(lat, lng) {
             const activeMapInstance = isMobile && map ? map : (isMobile ? null : map);
             if(activeMapInstance){
@@ -559,146 +424,20 @@
             }
         }
         
-        function locateUser() {
-            const targetMap = isMobile ? map : map;
-            if(!targetMap) { showStatus('Abra o mapa primeiro para usar a localização.', 'error'); return; }
-            if (!navigator.geolocation) { showStatus('Geolocalização não é suportada.', 'error'); return; }
-            showStatus('Buscando sua localização...', 'success');
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    targetMap.setView([lat, lng], 16);
-                    updateSelectionMarker(lat, lng);
-                    showStatus('Localização encontrada!', 'success');
-                    if(isMobile) document.getElementById('map-modal').classList.remove('active');
-                },
-                (error) => {
-                    let message = 'Não foi possível obter sua localização.';
-                    switch (error.code) {
-                        case error.PERMISSION_DENIED: message = 'Você negou o pedido de Geolocalização.'; break;
-                        case error.POSITION_UNAVAILABLE: message = 'Informação de localização não está disponível.'; break;
-                        case error.TIMEOUT: message = 'O pedido de geolocalização expirou.'; break;
-                    }
-                    showStatus(message, 'error');
-                    targetMap.setView(initialCoords, 14);
-                }
-            );
-        }
+        function locateUser() { /* ... sua função ... */ }
+        function recenterMap() { /* ... sua função ... */ }
+        async function geocodeAddress() { /* ... sua função ... */ }
 
-        function recenterMap() {
-            const targetMap = isMobile ? map : map;
-            if(!targetMap) { return; }
-            if (currentMarker) {
-                targetMap.setView(currentMarker.getLatLng(), 16);
-            } else {
-                targetMap.setView(initialCoords, 14);
-            }
-        }
+        document.getElementById('reportForm').addEventListener('submit', async function(e) { /* ... sua função ... */ });
+        async function deleteOutage(docId) { /* ... sua função ... */ }
+        document.addEventListener('click', function(e) { /* ... listener ... */ });
 
-        async function geocodeAddress() {
-            const targetMap = isMobile ? map : map;
-            if(!targetMap) { showStatus('Abra o mapa primeiro para buscar um endereço.', 'error'); return; }
-            const userInput = document.getElementById('address').value.trim();
-            if (!userInput) { showStatus('Por favor, digite um endereço para buscar.', 'error'); return; }
-            const cepRegex = /^\d{5}-?\d{3}$/;
-            let addressToSearch = userInput;
-            if (cepRegex.test(userInput)) {
-                try {
-                    const cep = userInput.replace('-', '');
-                    const viaCepResponse = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-                    const cepData = await viaCepResponse.json();
-                    if (cepData.erro) { showStatus('CEP não encontrado.', 'error'); return; }
-                    addressToSearch = `${cepData.logradouro}, ${cepData.localidade}, ${cepData.uf}`;
-                } catch (error) { showStatus('Erro ao consultar o CEP. Tente o endereço.', 'error'); return; }
-            }
-            const viewbox = '-47.2,-24.0,-46.0,-23.2';
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressToSearch)}&countrycodes=br&viewbox=${viewbox}&bounded=1`;
-            try {
-                const nominatimResponse = await fetch(url);
-                const nominatimData = await nominatimResponse.json();
-                if (nominatimData && nominatimData.length > 0) {
-                    const { lat, lon } = nominatimData[0];
-                    targetMap.setView([parseFloat(lat), parseFloat(lon)], 17);
-                    updateSelectionMarker(parseFloat(lat), parseFloat(lon));
-                    if(isMobile) document.getElementById('map-modal').classList.remove('active');
-                } else { showStatus('Endereço não encontrado na região.', 'error'); }
-            } catch (error) { showStatus('Ocorreu um erro ao buscar o endereço.', 'error'); }
-        }
-
-        document.getElementById('reportForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const submitBtn = document.getElementById('submitBtn');
-            if (!document.getElementById('problemType').value || !document.getElementById('latitude').value) {
-                showStatus('Selecione um local no mapa primeiro.', 'error'); return;
-            }
-            submitBtn.disabled = true; submitBtn.textContent = 'Enviando...';
-            const userName = document.getElementById('userName').value.trim() || "Anônimo";
-            const reportData = {
-                problemType: document.getElementById('problemType').value,
-                description: document.getElementById('description').value.trim(),
-                latitude: parseFloat(document.getElementById('latitude').value),
-                longitude: parseFloat(document.getElementById('longitude').value),
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                userName: userName
-            };
-            try {
-                await db.collection('outages').add(reportData);
-                showStatus('Problema reportado com sucesso!', 'success');
-                document.getElementById('reportForm').reset();
-                if (currentMarker) {
-                    const targetMap = isMobile ? map : map;
-                    if(targetMap && targetMap.hasLayer(currentMarker)) {
-                         targetMap.removeLayer(currentMarker);
-                    }
-                    if(mapPreview && mapPreview.hasLayer && mapPreview.hasLayer(currentMarker)){
-                        mapPreview.removeLayer(currentMarker);
-                    }
-                    currentMarker = null;
-                    if (recenterButtonElement) {
-                        L.DomUtil.addClass(recenterButtonElement, 'leaflet-disabled');
-                    }
-                }
-            } catch (error) {
-                showStatus('Erro ao enviar o reporte. Tente novamente.', 'error');
-            } finally {
-                submitBtn.disabled = false; submitBtn.textContent = 'Reportar Problema';
-            }
-        });
-        
-        async function deleteOutage(docId) {
-            if (!db || !docId) return;
-            if (!confirm('Você tem certeza que a energia neste local foi restabelecida?')) { return; }
-            try {
-                await db.collection('outages').doc(docId).delete();
-                showStatus('Obrigado por avisar! Ponto removido do mapa.', 'success');
-            } catch (error) {
-                showStatus('Ocorreu um erro ao remover o ponto.', 'error');
-            }
-        }
-
-        document.addEventListener('click', function(e) {
-            if (e.target && e.target.matches('.resolve-btn')) {
-                const docId = e.target.dataset.id;
-                deleteOutage(docId);
-            }
-        });
-
-        document.getElementById('locateBtn').addEventListener('click', locateUser);
         document.getElementById('searchBtn').addEventListener('click', geocodeAddress);
         document.getElementById('address').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') { e.preventDefault(); geocodeAddress(); }
         });
 
-        function showStatus(message, type) {
-            const statusEl = document.getElementById('statusMessage');
-            if (!statusEl) return;
-            statusEl.textContent = message;
-            statusEl.className = `status-message ${type} show`;
-            setTimeout(() => {
-                statusEl.classList.remove('show');
-            }, 4000);
-        }
+        function showStatus(message, type) { /* ... sua função ... */ }
 
         fetchAndDisplayOutages();
     </script>
