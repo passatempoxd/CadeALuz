@@ -226,16 +226,64 @@
             background-color: var(--container-dark);
         }
 
+        /* --- ESTILOS PARA O MAPA EXPANSÍVEL NO CELULAR --- */
+        .map-preview { display: none; }
+        .map-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--bg-dark);
+            z-index: 3000;
+            flex-direction: column;
+        }
+        .map-modal.active { display: flex; }
+        #modal-map { flex-grow: 1; }
+        .modal-close-btn {
+            background: var(--primary-accent);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
         @media (max-width: 1200px) {
             html, body { height: auto; overflow: auto; }
             body { padding: 0; }
             .container { height: auto; max-height: none; border-radius: 0; display: block; }
             .content { grid-template-columns: 1fr; overflow: visible; }
-            .form-section { border-right: none; border-bottom: 1px solid var(--border-color); padding: 30px 20px; height: auto; overflow: visible; }
+            .form-section { border-right: none; padding: 30px 20px; height: auto; overflow: visible; }
             #reportForm { height: auto; overflow-y: visible; }
-            #map { min-height: 500px; }
-            #map-legend { display: none; }
+            .map-section, #map-legend { display: none; }
             .footer { position: relative; }
+
+            .map-preview {
+                display: block;
+                height: 150px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                overflow: hidden;
+                position: relative;
+                cursor: pointer;
+                border: 2px solid var(--border-color);
+            }
+            .map-preview::after {
+                content: 'Clique para abrir o mapa e selecionar o local';
+                position: absolute;
+                top: 0; left: 0;
+                width: 100%; height: 100%;
+                background: rgba(0,0,0,0.6);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: 600;
+                text-align: center;
+                padding: 10px;
+                font-size: 1.1rem;
+            }
         }
     </style>
 </head>
@@ -246,10 +294,12 @@
         </div>
         <div class="content">
             <div class="form-section">
+                <div class="map-preview" id="map-preview"></div>
+                
                 <h3>Reportar um Problema</h3>
-                <p>Digite o endereço ou clique no mapa para selecionar o local.</p>
+                <p>Selecione a localização e preencha os detalhes.</p>
                 <form id="reportForm">
-                    <div class="form-group">
+                     <div class="form-group">
                         <label for="address">🔎 Endereço:</label>
                         <div class="address-search-group">
                             <input type="text" id="address" placeholder="Rua, Número, Cidade ou CEP">
@@ -300,6 +350,11 @@
         </footer>
     </div>
 
+    <div class="map-modal" id="map-modal">
+        <div id="modal-map"></div>
+        <div class="modal-close-btn" id="modal-close-btn">Confirmar Localização e Fechar</div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <script>
@@ -309,66 +364,146 @@
 
         function sanitizeHTML(text) { /* ... função ... */ }
 
+        // --- LÓGICA COMPLETA PARA CONTROLAR O MAPA DE DESKTOP VS. MOBILE ---
         const initialCoords = [-23.5244, -46.8354];
-        const map = L.map('map').setView(initialCoords, 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19
-        }).addTo(map);
-
+        const isMobile = window.innerWidth <= 1200;
+        let map; 
+        let mapPreview;
+        
+        const outageMarkersLayer = L.layerGroup();
         let currentMarker = null;
         let recenterButtonElement = null;
-        const outageMarkersLayer = L.layerGroup().addTo(map);
-        const icons = { /* ... seus ícones ... */ };
-        
-        function locateUser() { /* ... sua função ... */ }
-        function recenterMap() { /* ... sua função ... */ }
-        
-        // --- CÓDIGO DOS DOIS BOTÕES RESTAURADO ---
-        const LocateControl = L.Control.extend({
-            onAdd: function(map) {
-                const btn = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-locate');
-                btn.innerHTML = `<a href="#" title="Minha Localização">🎯</a>`;
-                L.DomEvent.on(btn, 'click', L.DomEvent.stop).on(btn, 'click', locateUser);
-                return btn;
-            }
-        });
-        const RecenterControl = L.Control.extend({
-            onAdd: function(map) {
-                const btn = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-recenter');
-                btn.innerHTML = `<a href="#" title="Centralizar no Marcador">📍</a>`;
-                recenterButtonElement = btn;
-                L.DomUtil.addClass(recenterButtonElement, 'leaflet-disabled');
-                L.DomEvent.on(btn, 'click', L.DomEvent.stop).on(btn, 'click', recenterMap);
-                return btn;
-            }
-        });
-        new LocateControl({ position: 'topleft' }).addTo(map);
-        new RecenterControl({ position: 'topleft' }).addTo(map);
 
+        function initMap(mapId, options) {
+            const mapInstance = L.map(mapId, options).setView(initialCoords, options.zoom || 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(mapInstance);
+            outageMarkersLayer.addTo(mapInstance);
+            return mapInstance;
+        }
 
-        function getIconForProblem(problemType) { /* ... sua função ... */ }
-        function fetchAndDisplayOutages() { /* ... sua função ... */ }
+        if (isMobile) {
+            mapPreview = initMap('map-preview', {
+                dragging: false, zoomControl: false, scrollWheelZoom: false, doubleClickZoom: false, zoom: 13
+            });
+            
+            document.getElementById('map-preview').addEventListener('click', () => {
+                document.getElementById('map-modal').classList.add('active');
+                if (!map) {
+                    map = initMap('modal-map', { zoomControl: true });
+                    addControlsToMap(map);
+                    map.on('click', (e) => {
+                        updateSelectionMarker(e.latlng.lat, e.latlng.lng);
+                        document.getElementById('map-modal').classList.remove('active');
+                    });
+                }
+                map.invalidateSize();
+            });
+            document.getElementById('modal-close-btn').addEventListener('click', () => {
+                document.getElementById('map-modal').classList.remove('active');
+            });
+
+        } else {
+            map = initMap('map', { zoomControl: true });
+            addControlsToMap(map);
+            map.on('click', (e) => updateSelectionMarker(e.latlng.lat, e.latlng.lng));
+        }
+
+        const icons = { /* ... ícones ... */ };
+        function getIconForProblem(problemType) { /* ... função ... */ }
+        function fetchAndDisplayOutages() { /* ... função ... */ }
         
         function updateSelectionMarker(lat, lng) {
-            if (currentMarker) map.removeLayer(currentMarker);
-            currentMarker = L.marker([lat, lng]).addTo(map);
+            const activeMapInstance = isMobile ? map : map;
+            if (currentMarker) {
+                if (activeMapInstance.hasLayer(currentMarker)) {
+                    activeMapInstance.removeLayer(currentMarker);
+                }
+            }
+            currentMarker = L.marker([lat, lng]).addTo(activeMapInstance);
+            
             document.getElementById('latitude').value = lat.toFixed(6);
             document.getElementById('longitude').value = lng.toFixed(6);
+            
             if (recenterButtonElement) {
                 L.DomUtil.removeClass(recenterButtonElement, 'leaflet-disabled');
             }
         }
+        
+        // --- FUNÇÕES DOS BOTÕES RESTAURADAS ---
+        function locateUser() {
+            const targetMap = isMobile ? map : map;
+            if (!navigator.geolocation) {
+                showStatus('Geolocalização não é suportada.', 'error');
+                return;
+            }
+            showStatus('Buscando sua localização...', 'success');
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    targetMap.setView([lat, lng], 16);
+                    updateSelectionMarker(lat, lng);
+                    showStatus('Localização encontrada!', 'success');
+                    if(isMobile) document.getElementById('map-modal').classList.remove('active');
+                },
+                (error) => {
+                    let message = 'Não foi possível obter sua localização.';
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED: message = 'Você negou o pedido de Geolocalização.'; break;
+                        case error.POSITION_UNAVAILABLE: message = 'Informação de localização não está disponível.'; break;
+                        case error.TIMEOUT: message = 'O pedido de geolocalização expirou.'; break;
+                    }
+                    showStatus(message, 'error');
+                    targetMap.setView(initialCoords, 14);
+                }
+            );
+        }
 
-        async function geocodeAddress() { /* ... sua função ... */ }
+        function recenterMap() {
+            const targetMap = isMobile ? map : map;
+            if (currentMarker) {
+                targetMap.setView(currentMarker.getLatLng(), 16);
+            } else {
+                targetMap.setView(initialCoords, 14);
+            }
+        }
+
+        function addControlsToMap(mapInstance) {
+            const LocateControl = L.Control.extend({
+                onAdd: function() {
+                    const btn = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-locate');
+                    btn.innerHTML = `<a href="#" title="Minha Localização">🎯</a>`;
+                    L.DomEvent.on(btn, 'click', L.DomEvent.stop).on(btn, 'click', locateUser);
+                    return btn;
+                }
+            });
+            const RecenterControl = L.Control.extend({
+                onAdd: function() {
+                    const btn = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-recenter');
+                    btn.innerHTML = `<a href="#" title="Centralizar no Marcador">📍</a>`;
+                    recenterButtonElement = btn;
+                    L.DomUtil.addClass(recenterButtonElement, 'leaflet-disabled');
+                    L.DomEvent.on(btn, 'click', L.DomEvent.stop).on(btn, 'click', recenterMap);
+                    return btn;
+                }
+            });
+            new LocateControl({ position: 'topleft' }).addTo(mapInstance);
+            new RecenterControl({ position: 'topleft' }).addTo(mapInstance);
+        }
 
         document.getElementById('reportForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             // ... (lógica de submit) ...
             try {
                 // ... (lógica try) ...
-                if (currentMarker) { 
-                    map.removeLayer(currentMarker);
+                if (currentMarker) {
+                    const targetMap = isMobile ? map : map;
+                    if(targetMap && targetMap.hasLayer(currentMarker)) {
+                         targetMap.removeLayer(currentMarker);
+                    }
                     currentMarker = null;
                     if (recenterButtonElement) {
                         L.DomUtil.addClass(recenterButtonElement, 'leaflet-disabled');
