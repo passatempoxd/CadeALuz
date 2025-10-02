@@ -668,7 +668,7 @@
             }
         }
 
-        // --- FUNÇÃO DE BUSCA HÍBRIDA (BrasilAPI para CEP, Geoapify para Endereço) ---
+        // --- FUNÇÃO DE BUSCA HÍBRIDA (COM CORREÇÃO PARA O ERRO Invalid LatLng) ---
         async function geocodeAddress() {
             const targetMap = isMobile ? map : map;
             if (!targetMap) {
@@ -699,11 +699,17 @@
                     const cepData = await brasilApiResponse.json();
 
                     if (cepData.location && cepData.location.coordinates) {
-                        const { longitude, latitude } = cepData.location.coordinates;
+                        // CORREÇÃO: Convertendo os valores de texto (string) para números (float)
+                        const latitude = parseFloat(cepData.location.coordinates.latitude);
+                        const longitude = parseFloat(cepData.location.coordinates.longitude);
                         
-                        targetMap.setView([latitude, longitude], 17);
-                        updateSelectionMarker(latitude, longitude);
-                        showStatus(`CEP encontrado: ${cepData.street}`, 'success');
+                        if (!isNaN(latitude) && !isNaN(longitude)) {
+                            targetMap.setView([latitude, longitude], 17);
+                            updateSelectionMarker(latitude, longitude);
+                            showStatus(`CEP encontrado: ${cepData.street}`, 'success');
+                        } else {
+                             throw new Error('Coordenadas inválidas recebidas para o CEP.');
+                        }
                     } else {
                         throw new Error('Coordenadas não encontradas para este CEP.');
                     }
