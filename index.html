@@ -342,10 +342,15 @@
                     <div class="location-divider">
                         <span>OU</span>
                     </div>
+
                     <div class="form-group">
-                        <label for="address">🔎 Endereço:</label>
+                        <label for="address-street">🔎 Endereço (Rua, Cidade ou CEP):</label>
+                        <input type="text" id="address-street" placeholder="Ex: Rua das Flores, São Paulo">
+                    </div>
+                    <div class="form-group">
+                        <label for="address-number">Número:</label>
                         <div class="address-search-group">
-                            <input type="text" id="address" placeholder="Rua, Número, Cidade ou CEP">
+                            <input type="text" id="address-number" placeholder="Ex: 123">
                             <button type="button" id="searchBtn" class="search-btn">Buscar</button>
                         </div>
                     </div>
@@ -401,7 +406,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <script>
-        // --- SEÇÃO DE JAVASCRIPT COMPLETA E REVISADA ---
+        // --- INÍCIO DO JAVASCRIPT ATUALIZADO ---
         const firebaseConfig = {
             apiKey: "__FIREBASE_API_KEY__",
             authDomain: "__FIREBASE_AUTH_DOMAIN__",
@@ -479,7 +484,6 @@
                     addControlsToMap(map);
                     updateMapMarkers(map, outageDataCache); 
                     
-                    // Se já tivermos uma localização, aplica no mapa modal
                     if(lastKnownCoords) {
                         map.setView([lastKnownCoords.lat, lastKnownCoords.lng], 16);
                         updateSelectionMarker(lastKnownCoords.lat, lastKnownCoords.lng);
@@ -590,13 +594,11 @@
         }
 
         function updateSelectionMarker(lat, lng) {
-            // Guarda a coordenada para uso futuro (ex: abrir o mapa modal)
             lastKnownCoords = { lat, lng };
             
             document.getElementById('latitude').value = lat.toFixed(6);
             document.getElementById('longitude').value = lng.toFixed(6);
 
-            // Atualiza o marcador no mapa que estiver visível/inicializado
             if (map) {
                 if (currentMarker) map.removeLayer(currentMarker);
                 currentMarker = L.marker([lat, lng], { icon: icons.selection }).addTo(map);
@@ -614,7 +616,6 @@
         }
         
         function locateUser() {
-            // REMOVIDA A VERIFICAÇÃO DE MAPA ABERTO
             if (!navigator.geolocation) {
                 showStatus('Geolocalização não é suportada.', 'error');
                 return;
@@ -631,10 +632,8 @@
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
                     
-                    // A função agora só atualiza os dados e marcadores
                     updateSelectionMarker(lat, lng);
                     
-                    // E se o mapa modal estiver aberto, ele o centraliza
                     if(map) {
                        map.setView([lat, lng], 16);
                     }
@@ -668,34 +667,54 @@
                 targetMap.setView(initialCoords, 14);
             }
         }
-
+        
+        // --- FUNÇÃO DE BUSCA DE ENDEREÇO ATUALIZADA ---
         async function geocodeAddress() {
             const targetMap = isMobile ? map : map;
             if(!targetMap) { showStatus('Abra o mapa primeiro para buscar um endereço.', 'error'); return; }
-            const userInput = document.getElementById('address').value.trim();
-            if (!userInput) { showStatus('Por favor, digite um endereço para buscar.', 'error'); return; }
+
+            const street = document.getElementById('address-street').value.trim();
+            const number = document.getElementById('address-number').value.trim();
+
+            const userInput = street; 
+            if (!userInput) { showStatus('Por favor, digite um endereço ou CEP para buscar.', 'error'); return; }
+
             const cepRegex = /^\d{5}-?\d{3}$/;
-            let addressToSearch = userInput;
+            let addressToSearch;
+
             if (cepRegex.test(userInput)) {
                 try {
                     const cep = userInput.replace('-', '');
                     const viaCepResponse = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
                     const cepData = await viaCepResponse.json();
                     if (cepData.erro) { showStatus('CEP não encontrado.', 'error'); return; }
-                    addressToSearch = `${cepData.logradouro}, ${cepData.localidade}, ${cepData.uf}`;
+                    addressToSearch = `${number} ${cepData.logradouro}, ${cepData.localidade}, ${cepData.uf}`;
                 } catch (error) { showStatus('Erro ao consultar o CEP. Tente o endereço.', 'error'); return; }
+            } else {
+                if (number) {
+                    addressToSearch = `${number} ${street}`;
+                } else {
+                    addressToSearch = street;
+                }
             }
+            
             const viewbox = '-47.2,-24.0,-46.0,-23.2';
             const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressToSearch)}&countrycodes=br&viewbox=${viewbox}&bounded=1`;
+            
             try {
                 const nominatimResponse = await fetch(url);
                 const nominatimData = await nominatimResponse.json();
+                
                 if (nominatimData && nominatimData.length > 0) {
                     const { lat, lon } = nominatimData[0];
                     targetMap.setView([parseFloat(lat), parseFloat(lon)], 17);
                     updateSelectionMarker(parseFloat(lat), parseFloat(lon));
-                } else { showStatus('Endereço não encontrado na região.', 'error'); }
-            } catch (error) { showStatus('Ocorreu um erro ao buscar o endereço.', 'error'); }
+                } else { 
+                    showStatus('Endereço não encontrado na região.', 'error'); 
+                }
+            } catch (error) { 
+                showStatus('Ocorreu um erro ao buscar o endereço.', 'error'); 
+            }
         }
 
         document.getElementById('reportForm').addEventListener('submit', async function(e) {
@@ -718,7 +737,9 @@
                 await db.collection('outages').add(reportData);
                 showStatus('Problema reportado com sucesso!', 'success');
                 document.getElementById('reportForm').reset();
-                lastKnownCoords = null; // Limpa a localização guardada
+                document.getElementById('address-street').value = '';
+                document.getElementById('address-number').value = '';
+                lastKnownCoords = null;
                 
                 if (currentMarker) {
                     const targetMap = isMobile ? map : map;
@@ -763,7 +784,12 @@
 
         document.getElementById('locateBtn').addEventListener('click', locateUser);
         document.getElementById('searchBtn').addEventListener('click', geocodeAddress);
-        document.getElementById('address').addEventListener('keydown', (e) => {
+
+        // --- LISTENERS DE TECLADO ATUALIZADOS ---
+        document.getElementById('address-street').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); geocodeAddress(); }
+        });
+        document.getElementById('address-number').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') { e.preventDefault(); geocodeAddress(); }
         });
 
