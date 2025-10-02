@@ -336,8 +336,8 @@
                 <form id="reportForm">
                     <div class="form-group">
                          <button type="button" id="locateBtn" class="locate-btn">
-                            🎯 Use minha localização atual
-                        </button>
+                             🎯 Use minha localização atual
+                         </button>
                     </div>
                     <div class="location-divider">
                         <span>OU</span>
@@ -402,20 +402,28 @@
     
     <script>
         // --- SEÇÃO DE JAVASCRIPT COMPLETA E REVISADA ---
-        const firebaseConfig = {
-            apiKey: "__FIREBASE_API_KEY__",
-            authDomain: "__FIREBASE_AUTH_DOMAIN__",
-            projectId: "__FIREBASE_PROJECT_ID__",
-            storageBucket: "__FIREBASE_STORAGE_BUCKET__",
-            messagingSenderId: "__FIREBASE_MESSAGING_SENDER_ID__",
-            appId: "__FIREBASE_APP_ID__"
-        };
+        
+        // As credenciais do Firebase serão carregadas de forma segura
         let db;
-        try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-        } catch (error) { 
-            alert('Erro crítico: A configuração do Firebase é inválida.');
+
+        async function initializeFirebase() {
+            try {
+                // Esta função serverless (que você precisa criar) buscará as variáveis de ambiente no Vercel
+                const response = await fetch('/api/firebase-config'); // Assumindo que você criará essa API
+                if (!response.ok) {
+                    throw new Error('Falha ao buscar a configuração do Firebase.');
+                }
+                const firebaseConfig = await response.json();
+
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                
+                // Só busca os dados do mapa depois que o Firebase iniciar com sucesso
+                fetchAndDisplayOutages();
+            } catch (error) {
+                console.error("Erro crítico ao inicializar o Firebase:", error);
+                alert('Erro crítico: Não foi possível conectar ao banco de dados. Verifique a configuração da sua API serverless.');
+            }
         }
 
         function sanitizeHTML(text) {
@@ -479,7 +487,6 @@
                     addControlsToMap(map);
                     updateMapMarkers(map, outageDataCache); 
                     
-                    // Se já tivermos uma localização, aplica no mapa modal
                     if(lastKnownCoords) {
                         map.setView([lastKnownCoords.lat, lastKnownCoords.lng], 16);
                         updateSelectionMarker(lastKnownCoords.lat, lastKnownCoords.lng);
@@ -590,13 +597,11 @@
         }
 
         function updateSelectionMarker(lat, lng) {
-            // Guarda a coordenada para uso futuro (ex: abrir o mapa modal)
             lastKnownCoords = { lat, lng };
             
             document.getElementById('latitude').value = lat.toFixed(6);
             document.getElementById('longitude').value = lng.toFixed(6);
 
-            // Atualiza o marcador no mapa que estiver visível/inicializado
             if (map) {
                 if (currentMarker) map.removeLayer(currentMarker);
                 currentMarker = L.marker([lat, lng], { icon: icons.selection }).addTo(map);
@@ -614,7 +619,6 @@
         }
         
         function locateUser() {
-            // REMOVIDA A VERIFICAÇÃO DE MAPA ABERTO
             if (!navigator.geolocation) {
                 showStatus('Geolocalização não é suportada.', 'error');
                 return;
@@ -631,10 +635,8 @@
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
                     
-                    // A função agora só atualiza os dados e marcadores
                     updateSelectionMarker(lat, lng);
                     
-                    // E se o mapa modal estiver aberto, ele o centraliza
                     if(map) {
                        map.setView([lat, lng], 16);
                     }
@@ -669,40 +671,64 @@
             }
         }
 
+        // --- FUNÇÃO DE BUSCA DE ENDEREÇO ATUALIZADA PARA GEOAPIFY ---
         async function geocodeAddress() {
-            const targetMap = isMobile ? map : map;
-            if(!targetMap) { showStatus('Abra o mapa primeiro para buscar um endereço.', 'error'); return; }
-            const userInput = document.getElementById('address').value.trim();
-            if (!userInput) { showStatus('Por favor, digite um endereço para buscar.', 'error'); return; }
-            const cepRegex = /^\d{5}-?\d{3}$/;
-            let addressToSearch = userInput;
-            if (cepRegex.test(userInput)) {
-                try {
-                    const cep = userInput.replace('-', '');
-                    const viaCepResponse = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-                    const cepData = await viaCepResponse.json();
-                    if (cepData.erro) { showStatus('CEP não encontrado.', 'error'); return; }
-                    addressToSearch = `${cepData.logradouro}, ${cepData.localidade}, ${cepData.uf}`;
-                } catch (error) { showStatus('Erro ao consultar o CEP. Tente o endereço.', 'error'); return; }
+            const targetMap = isMobile ? map : map; 
+            if (!targetMap) {
+                showStatus('Abra o mapa primeiro para buscar um endereço.', 'info');
+                return;
             }
-            const viewbox = '-47.2,-24.0,-46.0,-23.2';
-            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressToSearch)}&countrycodes=br&viewbox=${viewbox}&bounded=1`;
+            
+            const userInput = document.getElementById('address').value.trim();
+            if (!userInput) {
+                showStatus('Por favor, digite um endereço para buscar.', 'error');
+                return;
+            }
+
+            showStatus('Buscando endereço...', 'info');
+
             try {
-                const nominatimResponse = await fetch(url);
-                const nominatimData = await nominatimResponse.json();
-                if (nominatimData && nominatimData.length > 0) {
-                    const { lat, lon } = nominatimData[0];
-                    targetMap.setView([parseFloat(lat), parseFloat(lon)], 17);
-                    updateSelectionMarker(parseFloat(lat), parseFloat(lon));
-                } else { showStatus('Endereço não encontrado na região.', 'error'); }
-            } catch (error) { showStatus('Ocorreu um erro ao buscar o endereço.', 'error'); }
+                // 1. Busca a chave da API da Geoapify de forma segura
+                const keyResponse = await fetch('/api/geoapify-key');
+                if (!keyResponse.ok) {
+                    throw new Error('Não foi possível obter a chave da API de geolocalização.');
+                }
+                const { apiKey } = await keyResponse.json();
+
+                // 2. Monta a URL da API Geoapify
+                const query = encodeURIComponent(userInput);
+                const url = `https://api.geoapify.com/v1/geocode/search?text=${query}&filter=countrycode:br&apiKey=${apiKey}`;
+
+                // 3. Faz a chamada para a API da Geoapify
+                const geoapifyResponse = await fetch(url);
+                if (!geoapifyResponse.ok) {
+                    throw new Error('Erro na resposta do serviço de geolocalização.');
+                }
+                const geoapifyData = await geoapifyResponse.json();
+
+                // 4. Processa o resultado
+                if (geoapifyData.features && geoapifyData.features.length > 0) {
+                    const bestResult = geoapifyData.features[0];
+                    const [lng, lat] = bestResult.geometry.coordinates;
+                    
+                    targetMap.setView([lat, lng], 17);
+                    updateSelectionMarker(lat, lng);
+                    showStatus('Endereço encontrado!', 'success');
+                } else {
+                    showStatus('Endereço não encontrado. Tente ser mais específico.', 'error');
+                }
+
+            } catch (error) {
+                console.error("Erro ao buscar endereço com Geoapify API:", error);
+                showStatus('Ocorreu um erro ao buscar o endereço.', 'error');
+            }
         }
 
         document.getElementById('reportForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const submitBtn = document.getElementById('submitBtn');
             if (!document.getElementById('problemType').value || !document.getElementById('latitude').value) {
-                showStatus('Selecione um local no mapa primeiro.', 'error'); return;
+                showStatus('Selecione um local no mapa e um tipo de problema.', 'error'); return;
             }
             submitBtn.disabled = true; submitBtn.textContent = 'Enviando...';
             const userName = document.getElementById('userName').value.trim() || "Anônimo";
@@ -718,7 +744,7 @@
                 await db.collection('outages').add(reportData);
                 showStatus('Problema reportado com sucesso!', 'success');
                 document.getElementById('reportForm').reset();
-                lastKnownCoords = null; // Limpa a localização guardada
+                lastKnownCoords = null;
                 
                 if (currentMarker) {
                     const targetMap = isMobile ? map : map;
@@ -781,7 +807,8 @@
             }, 4000);
         }
 
-        fetchAndDisplayOutages();
+        // Inicia o Firebase de forma segura assim que a página carregar
+        initializeFirebase();
     </script>
 </body>
 </html>
