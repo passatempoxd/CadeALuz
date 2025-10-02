@@ -668,7 +668,6 @@
             }
         }
 
-        // --- FUNÇÃO DE BUSCA HÍBRIDA (COM CORREÇÃO PARA O ERRO Invalid LatLng) ---
         async function geocodeAddress() {
             const targetMap = isMobile ? map : map;
             if (!targetMap) {
@@ -682,12 +681,11 @@
             }
 
             showStatus('Buscando localização...', 'info');
-
             const cepRegex = /^\d{5}-?\d{3}$/;
 
             try {
                 if (cepRegex.test(userInput)) {
-                    // --- ROTA 1: USUÁRIO DIGITOU UM CEP ---
+                    // --- ROTA 1: O USUÁRIO DIGITOU UM CEP ---
                     showStatus('Consultando CEP via BrasilAPI...', 'info');
                     const cep = userInput.replace('-', '');
                     const url = `https://brasilapi.com.br/api/cep/v2/${cep}`;
@@ -698,55 +696,64 @@
                     }
                     const cepData = await brasilApiResponse.json();
 
+                    let latitude, longitude;
+
                     if (cepData.location && cepData.location.coordinates) {
-                        // CORREÇÃO: Convertendo os valores de texto (string) para números (float)
-                        const latitude = parseFloat(cepData.location.coordinates.latitude);
-                        const longitude = parseFloat(cepData.location.coordinates.longitude);
-                        
-                        if (!isNaN(latitude) && !isNaN(longitude)) {
-                            targetMap.setView([latitude, longitude], 17);
-                            updateSelectionMarker(latitude, longitude);
-                            showStatus(`CEP encontrado: ${cepData.street}`, 'success');
-                        } else {
-                             throw new Error('Coordenadas inválidas recebidas para o CEP.');
-                        }
-                    } else {
-                        throw new Error('Coordenadas não encontradas para este CEP.');
+                        latitude = parseFloat(cepData.location.coordinates.latitude);
+                        longitude = parseFloat(cepData.location.coordinates.longitude);
                     }
+
+                    if (!isNaN(latitude) && !isNaN(longitude)) {
+                        targetMap.setView([latitude, longitude], 17);
+                        updateSelectionMarker(latitude, longitude);
+                        showStatus(`CEP encontrado: ${cepData.street}`, 'success');
+                        return; 
+                    }
+                    
+                    // --- FALLBACK ---
+                    showStatus('CEP encontrado. Refinando localização com Geoapify...', 'info');
+                    const fallbackAddress = `${cepData.street}, ${cepData.city}, ${cepData.state}`;
+                    await searchWithGeoapify(fallbackAddress);
 
                 } else {
-                    // --- ROTA 2: USUÁRIO DIGITOU UM ENDEREÇO NORMAL ---
-                    showStatus('Buscando endereço via Geoapify...', 'info');
-                    
-                    const keyResponse = await fetch('/api/geoapify-key');
-                    if (!keyResponse.ok) {
-                        throw new Error('Não foi possível obter a chave da API de geolocalização.');
-                    }
-                    const { apiKey } = await keyResponse.json();
-
-                    const query = encodeURIComponent(userInput);
-                    const url = `https://api.geoapify.com/v1/geocode/search?text=${query}&filter=countrycode:br&apiKey=${apiKey}`;
-
-                    const geoapifyResponse = await fetch(url);
-                    if (!geoapifyResponse.ok) {
-                        throw new Error('Erro na resposta do serviço de geolocalização.');
-                    }
-                    const geoapifyData = await geoapifyResponse.json();
-
-                    if (geoapifyData.features && geoapifyData.features.length > 0) {
-                        const bestResult = geoapifyData.features[0];
-                        const [lng, lat] = bestResult.geometry.coordinates;
-                        
-                        targetMap.setView([lat, lng], 17);
-                        updateSelectionMarker(lat, lng);
-                        showStatus('Endereço encontrado!', 'success');
-                    } else {
-                        showStatus('Endereço não encontrado. Tente ser mais específico.', 'error');
-                    }
+                    // --- ROTA 2: O USUÁRIO DIGITOU UM ENDEREÇO NORMAL ---
+                    await searchWithGeoapify(userInput);
                 }
             } catch (error) {
                 console.error("Erro na geocodificação:", error.message);
                 showStatus(error.message, 'error');
+            }
+        }
+
+        // Função auxiliar para evitar repetição de código
+        async function searchWithGeoapify(address) {
+            showStatus('Buscando endereço via Geoapify...', 'info');
+            const targetMap = isMobile ? map : map;
+            
+            const keyResponse = await fetch('/api/geoapify-key');
+            if (!keyResponse.ok) {
+                throw new Error('Não foi possível obter a chave da API de geolocalização.');
+            }
+            const { apiKey } = await keyResponse.json();
+
+            const query = encodeURIComponent(address);
+            const url = `https://api.geoapify.com/v1/geocode/search?text=${query}&filter=countrycode:br&apiKey=${apiKey}`;
+
+            const geoapifyResponse = await fetch(url);
+            if (!geoapifyResponse.ok) {
+                throw new Error('Erro na resposta do serviço de geolocalização.');
+            }
+            const geoapifyData = await geoapifyResponse.json();
+
+            if (geoapifyData.features && geoapifyData.features.length > 0) {
+                const bestResult = geoapifyData.features[0];
+                const [lng, lat] = bestResult.geometry.coordinates;
+                
+                targetMap.setView([lat, lng], 17);
+                updateSelectionMarker(lat, lng);
+                showStatus('Endereço encontrado!', 'success');
+            } else {
+                showStatus('Endereço não encontrado. Tente ser mais específico.', 'error');
             }
         }
 
