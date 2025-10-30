@@ -23,8 +23,8 @@
             --text-light: #e0e0e0;
             --text-muted: #a0a0a0;
             --border-color: #40405c;
-            --success-color: #8e2de2; /* Roxo do tema */
-            --success-hover: #7b22c7;  /* Roxo mais escuro */
+            --success-color: #8e2de2;
+            --success-hover: #7b22c7;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -401,8 +401,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <script>
-        // --- SEÇÃO DE JAVASCRIPT COMPLETA E REVISADA ---
-        
         let db;
 
         async function initializeFirebase() {
@@ -423,10 +421,49 @@
             }
         }
 
-        function sanitizeHTML(text) {
-            const temp = document.createElement('div');
-            temp.textContent = text;
-            return temp.innerHTML;
+        function createSecurePopup(item) {
+            const popup = document.createElement('div');
+            
+            const title = document.createElement('h4');
+            title.textContent = item.problemType || 'Problema';
+            
+            const descLabel = document.createElement('strong');
+            descLabel.textContent = 'Descrição: ';
+            
+            const descText = document.createTextNode(item.description || 'Nenhuma');
+            
+            const descPara = document.createElement('p');
+            descPara.appendChild(descLabel);
+            descPara.appendChild(descText);
+            
+            const reporterLabel = document.createElement('strong');
+            reporterLabel.textContent = 'Reportado por: ';
+            
+            const reporterText = document.createTextNode(item.userName || 'Anônimo');
+            
+            const reporterPara = document.createElement('p');
+            reporterPara.appendChild(reporterLabel);
+            reporterPara.appendChild(reporterText);
+            
+            const timestampPara = document.createElement('p');
+            const timestampLabel = document.createElement('strong');
+            timestampLabel.textContent = 'Reportado em: ';
+            const timestampText = document.createTextNode(item.timestamp ? item.timestamp.toDate().toLocaleString('pt-BR') : 'Data indisponível');
+            timestampPara.appendChild(timestampLabel);
+            timestampPara.appendChild(timestampText);
+            
+            const resolveBtn = document.createElement('button');
+            resolveBtn.className = 'resolve-btn';
+            resolveBtn.dataset.id = item.id;
+            resolveBtn.textContent = 'A Energia Voltou!';
+            
+            popup.appendChild(title);
+            popup.appendChild(descPara);
+            popup.appendChild(reporterPara);
+            popup.appendChild(timestampPara);
+            popup.appendChild(resolveBtn);
+            
+            return popup;
         }
 
         const initialCoords = [-23.5244, -46.8354];
@@ -439,13 +476,25 @@
         let recenterButtonElement = null;
         let lastKnownCoords = null;
 
-        function initMap(mapId, options) {
-            const mapInstance = L.map(mapId, options).setView(initialCoords, options.zoom || 14);
+        function createMapInstance(containerId, options = {}) {
+            const defaultOptions = {
+                dragging: true,
+                zoomControl: true,
+                scrollWheelZoom: true,
+                doubleClickZoom: true,
+                zoom: 14
+            };
+            
+            const mapOptions = { ...defaultOptions, ...options };
+            const mapInstance = L.map(containerId, mapOptions).setView(initialCoords, mapOptions.zoom);
+            
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
                 maxZoom: 19
             }).addTo(mapInstance);
+            
             mapInstance.outageMarkersLayer = L.layerGroup().addTo(mapInstance);
+            
             return mapInstance;
         }
         
@@ -473,14 +522,18 @@
         }
 
         if (isMobile) {
-            mapPreview = initMap('map-preview', {
-                dragging: false, zoomControl: false, scrollWheelZoom: false, doubleClickZoom: false, zoom: 13
+            mapPreview = createMapInstance('map-preview', {
+                dragging: false,
+                zoomControl: false,
+                scrollWheelZoom: false,
+                doubleClickZoom: false,
+                zoom: 13
             });
             
             document.getElementById('map-preview').addEventListener('click', () => {
                 document.getElementById('map-modal').classList.add('active');
                 if (!map) {
-                    map = initMap('modal-map', { zoomControl: true });
+                    map = createMapInstance('modal-map', { zoomControl: true });
                     addControlsToMap(map);
                     updateMapMarkers(map, outageDataCache); 
                     
@@ -499,7 +552,7 @@
                 document.getElementById('map-modal').classList.remove('active');
             });
         } else {
-            map = initMap('map', { zoomControl: true });
+            map = createMapInstance('map', { zoomControl: true });
             addControlsToMap(map);
             map.on('click', (e) => updateSelectionMarker(e.latlng.lat, e.latlng.lng));
         }
@@ -580,20 +633,32 @@
                 const marker = L.marker([item.latitude, item.longitude], { icon: icon });
                 
                 if (!isPreview) {
-                    const problemType = sanitizeHTML(item.problemType);
-                    const description = sanitizeHTML(item.description || 'Nenhuma');
-                    const reporterName = sanitizeHTML(item.userName || "Anônimo");
-                    const docId = item.id;
-                    
-                    const popupContent = `<h4>${problemType}</h4><p><strong>Descrição:</strong> ${description}</p><p><strong>Reportado por:</strong> ${reporterName}</p><p><strong>Reportado em:</strong> ${item.timestamp ? item.timestamp.toDate().toLocaleString('pt-BR') : 'Data indisponível'}</p><button class="resolve-btn" data-id="${docId}">A Energia Voltou!</button>`;
-                    marker.bindPopup(popupContent);
+                    marker.bindPopup(createSecurePopup(item));
                 }
                 
                 marker.addTo(mapInstance.outageMarkersLayer);
             });
         }
 
+        function isValidCoordinate(lat, lng) {
+            return (
+                typeof lat === 'number' &&
+                typeof lng === 'number' &&
+                !isNaN(lat) &&
+                !isNaN(lng) &&
+                lat >= -90 &&
+                lat <= 90 &&
+                lng >= -180 &&
+                lng <= 180
+            );
+        }
+
         function updateSelectionMarker(lat, lng) {
+            if (!isValidCoordinate(lat, lng)) {
+                showStatus('Coordenadas inválidas', 'error');
+                return;
+            }
+
             lastKnownCoords = { lat, lng };
             
             document.getElementById('latitude').value = lat.toFixed(6);
@@ -621,11 +686,7 @@
                 return;
             }
 
-            const statusEl = document.getElementById('statusMessage');
-            if (statusEl.hideTimeout) clearTimeout(statusEl.hideTimeout);
-            
-            statusEl.textContent = 'Buscando sua localização...';
-            statusEl.className = 'status-message info show';
+            showStatus('Buscando sua localização...', 'info');
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
@@ -668,64 +729,6 @@
             }
         }
 
-        async function geocodeAddress() {
-            const targetMap = isMobile ? map : map;
-            if (!targetMap) {
-                showStatus('Abra o mapa primeiro para buscar um endereço.', 'info');
-                return;
-            }
-            const userInput = document.getElementById('address').value.trim();
-            if (!userInput) {
-                showStatus('Por favor, digite um endereço para buscar.', 'error');
-                return;
-            }
-
-            showStatus('Buscando localização...', 'info');
-            const cepRegex = /^\d{5}-?\d{3}$/;
-
-            try {
-                if (cepRegex.test(userInput)) {
-                    // --- ROTA 1: O USUÁRIO DIGITOU UM CEP ---
-                    showStatus('Consultando CEP via BrasilAPI...', 'info');
-                    const cep = userInput.replace('-', '');
-                    const url = `https://brasilapi.com.br/api/cep/v2/${cep}`;
-                    
-                    const brasilApiResponse = await fetch(url);
-                    if (!brasilApiResponse.ok) {
-                        throw new Error('CEP não encontrado ou inválido.');
-                    }
-                    const cepData = await brasilApiResponse.json();
-
-                    let latitude, longitude;
-
-                    if (cepData.location && cepData.location.coordinates) {
-                        latitude = parseFloat(cepData.location.coordinates.latitude);
-                        longitude = parseFloat(cepData.location.coordinates.longitude);
-                    }
-
-                    if (!isNaN(latitude) && !isNaN(longitude)) {
-                        targetMap.setView([latitude, longitude], 17);
-                        updateSelectionMarker(latitude, longitude);
-                        showStatus(`CEP encontrado: ${cepData.street}`, 'success');
-                        return; 
-                    }
-                    
-                    // --- FALLBACK ---
-                    showStatus('CEP encontrado. Refinando localização com Geoapify...', 'info');
-                    const fallbackAddress = `${cepData.street}, ${cepData.city}, ${cepData.state}`;
-                    await searchWithGeoapify(fallbackAddress);
-
-                } else {
-                    // --- ROTA 2: O USUÁRIO DIGITOU UM ENDEREÇO NORMAL ---
-                    await searchWithGeoapify(userInput);
-                }
-            } catch (error) {
-                console.error("Erro na geocodificação:", error.message);
-                showStatus(error.message, 'error');
-            }
-        }
-
-        // Função auxiliar para evitar repetição de código
         async function searchWithGeoapify(address) {
             showStatus('Buscando endereço via Geoapify...', 'info');
             const targetMap = isMobile ? map : map;
@@ -749,6 +752,10 @@
                 const bestResult = geoapifyData.features[0];
                 const [lng, lat] = bestResult.geometry.coordinates;
                 
+                if (!isValidCoordinate(lat, lng)) {
+                    throw new Error('Coordenadas inválidas retornadas pela API.');
+                }
+                
                 targetMap.setView([lat, lng], 17);
                 updateSelectionMarker(lat, lng);
                 showStatus('Endereço encontrado!', 'success');
@@ -757,22 +764,98 @@
             }
         }
 
+        async function geocodeAddress() {
+            const targetMap = isMobile ? map : map;
+            if (!targetMap) {
+                showStatus('Abra o mapa primeiro para buscar um endereço.', 'info');
+                return;
+            }
+            const userInput = document.getElementById('address').value.trim();
+            if (!userInput) {
+                showStatus('Por favor, digite um endereço para buscar.', 'error');
+                return;
+            }
+
+            showStatus('Buscando localização...', 'info');
+            const cepRegex = /^\d{5}-?\d{3}$/;
+
+            try {
+                if (cepRegex.test(userInput)) {
+                    showStatus('Consultando CEP via BrasilAPI...', 'info');
+                    const cep = userInput.replace('-', '');
+                    const url = `https://brasilapi.com.br/api/cep/v2/${cep}`;
+                    
+                    const brasilApiResponse = await fetch(url);
+                    
+                    if (!brasilApiResponse.ok) {
+                        const errorText = await brasilApiResponse.text();
+                        console.error('Erro BrasilAPI:', errorText);
+                        throw new Error('CEP não encontrado ou inválido.');
+                    }
+                    
+                    const cepData = await brasilApiResponse.json();
+                    
+                    if (!cepData.street || !cepData.city) {
+                        throw new Error('CEP encontrado, mas dados incompletos.');
+                    }
+
+                    let latitude, longitude;
+
+                    if (cepData.location && cepData.location.coordinates) {
+                        latitude = parseFloat(cepData.location.coordinates.latitude);
+                        longitude = parseFloat(cepData.location.coordinates.longitude);
+                    }
+
+                    if (isValidCoordinate(latitude, longitude)) {
+                        targetMap.setView([latitude, longitude], 17);
+                        updateSelectionMarker(latitude, longitude);
+                        showStatus(`CEP encontrado: ${cepData.street}`, 'success');
+                        return;
+                    }
+                    
+                    showStatus('CEP encontrado. Refinando localização com Geoapify...', 'info');
+                    const fallbackAddress = `${cepData.street}, ${cepData.city}, ${cepData.state}, Brasil`;
+                    await searchWithGeoapify(fallbackAddress);
+
+                } else {
+                    await searchWithGeoapify(userInput + ', Brasil');
+                }
+            } catch (error) {
+                console.error("Erro na geocodificação:", error);
+                showStatus(error.message || 'Erro ao buscar endereço. Verifique sua conexão.', 'error');
+            }
+        }
+
         document.getElementById('reportForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const submitBtn = document.getElementById('submitBtn');
-            if (!document.getElementById('problemType').value || !document.getElementById('latitude').value) {
-                showStatus('Selecione um local no mapa e um tipo de problema.', 'error'); return;
+            
+            const lat = parseFloat(document.getElementById('latitude').value);
+            const lng = parseFloat(document.getElementById('longitude').value);
+            
+            if (!document.getElementById('problemType').value) {
+                showStatus('Selecione um tipo de problema.', 'error');
+                return;
             }
-            submitBtn.disabled = true; submitBtn.textContent = 'Enviando...';
+            
+            if (!isValidCoordinate(lat, lng)) {
+                showStatus('Selecione um local válido no mapa.', 'error');
+                return;
+            }
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Enviando...';
+            
             const userName = document.getElementById('userName').value.trim() || "Anônimo";
             const reportData = {
                 problemType: document.getElementById('problemType').value,
                 description: document.getElementById('description').value.trim(),
-                latitude: parseFloat(document.getElementById('latitude').value),
-                longitude: parseFloat(document.getElementById('longitude').value),
+                latitude: lat,
+                longitude: lng,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                 userName: userName
             };
+            
             try {
                 await db.collection('outages').add(reportData);
                 showStatus('Problema reportado com sucesso!', 'success');
@@ -796,9 +879,11 @@
                     L.DomUtil.addClass(recenterButtonElement, 'leaflet-disabled');
                 }
             } catch (error) {
+                console.error('Erro ao enviar reporte:', error);
                 showStatus('Erro ao enviar o reporte. Tente novamente.', 'error');
             } finally {
-                submitBtn.disabled = false; submitBtn.textContent = 'Reportar Problema';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Reportar Problema';
             }
         });
         
@@ -809,6 +894,7 @@
                 await db.collection('outages').doc(docId).delete();
                 showStatus('Obrigado por avisar! Ponto removido do mapa.', 'success');
             } catch (error) {
+                console.error('Erro ao deletar:', error);
                 showStatus('Ocorreu um erro ao remover o ponto.', 'error');
             }
         }
@@ -830,17 +916,20 @@
             const statusEl = document.getElementById('statusMessage');
             if (!statusEl) return;
             
-            if (statusEl.hideTimeout) clearTimeout(statusEl.hideTimeout);
+            if (statusEl.hideTimeout) {
+                clearTimeout(statusEl.hideTimeout);
+                delete statusEl.hideTimeout;
+            }
 
             statusEl.textContent = message;
             statusEl.className = `status-message ${type} show`;
             
             statusEl.hideTimeout = setTimeout(() => {
                 statusEl.classList.remove('show');
+                delete statusEl.hideTimeout;
             }, 4000);
         }
 
-        // Inicia o Firebase de forma segura assim que a página carregar
         initializeFirebase();
     </script>
 </body>
