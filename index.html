@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadê a Luz?</title>
+    <title>Cadê a Luz? ⚡</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
@@ -11,22 +11,33 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg-dark: #1a1a2e;
-            --container-dark: #1f1f3a;
-            --input-dark: #3a3a5a;
-            --primary-accent: #8e2de2;
-            --secondary-accent: #4a00e0;
-            --text-light: #e0e0e0;
-            --text-muted: #a0a0a0;
-            --border-color: #40405c;
-            --success-color: #8e2de2;
-            --success-hover: #7b22c7;
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #13131a;
+            --bg-tertiary: #1c1c26;
+            --surface: #25253a;
+            --surface-elevated: #2d2d42;
+            --primary: #8b5cf6;
+            --primary-hover: #7c3aed;
+            --primary-light: #a78bfa;
+            --accent: #ec4899;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
+            --border: #334155;
+            --success: #8b5cf6;
+            --danger: #ef4444;
+            --warning: #f59e0b;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box;
+        }
         
         html, body {
             height: 100%;
@@ -34,253 +45,531 @@
         }
 
         body {
-            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-light);
-            padding: 20px; 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 0;
             display: flex;
             align-items: center;
             justify-content: center;
             min-width: 320px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         
         .container {
             width: 100%;
             max-width: 1600px;
-            height: 100%;
-            max-height: 95vh;
+            height: 100vh;
             margin: 0 auto;
-            background: var(--container-dark);
-            border-radius: 20px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            background: var(--bg-secondary);
             overflow: hidden;
-            border: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
             position: relative;
         }
         
         .header {
-            background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
             color: white;
-            padding: 20px 30px; 
+            padding: 24px 32px;
             text-align: center;
             flex-shrink: 0;
+            box-shadow: 0 4px 24px rgba(139, 92, 246, 0.25);
+            position: relative;
+            overflow: hidden;
         }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 30% 50%, rgba(236, 72, 153, 0.3), transparent 50%);
+            pointer-events: none;
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+        
         .header h1 {
-            font-size: 2.1rem; 
-            font-weight: 700;
-            text-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        
+        .header h1 .emoji {
+            font-size: 2.2rem;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+        }
+        
+        .header-subtitle {
+            margin-top: 8px;
+            font-size: 0.875rem;
+            opacity: 0.9;
+            font-weight: 500;
         }
         
         .content { 
             display: grid;
-            grid-template-columns: minmax(380px, 1fr) 2.5fr;
+            grid-template-columns: 420px 1fr;
             flex-grow: 1;
             overflow: hidden;
+            gap: 0;
         }
         
         .form-section {
-            padding: 20px 30px; 
+            padding: 32px;
             display: flex;
             flex-direction: column;
-            overflow: hidden; 
+            overflow: hidden;
+            background: var(--bg-tertiary);
+            border-right: 1px solid var(--border);
         }
         
-        .form-section h3 { font-size: 1.4rem; color: white; font-weight: 600; margin-bottom: 10px; text-align: left; flex-shrink: 0; }
-        .form-section p { color: var(--text-muted); margin-bottom: 15px; text-align: left; font-size: 0.9rem; flex-shrink: 0; }
+        .form-header {
+            margin-bottom: 24px;
+        }
+        
+        .form-section h3 { 
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.01em;
+        }
+        
+        .form-section p { 
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
         
         #reportForm {
             flex-grow: 1;
-            overflow-y: auto; 
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
-            padding-right: 10px;
+            gap: 20px;
+            padding-right: 12px;
         }
         
-        .form-group { margin-bottom: 12px; } 
-        .form-group label { display: block; margin-bottom: 4px; font-weight: 500; color: var(--text-light); font-size: 0.9rem; }
+        #reportForm::-webkit-scrollbar {
+            width: 8px;
+        }
         
-        .form-group input, .form-group textarea, .form-group select {
+        #reportForm::-webkit-scrollbar-track {
+            background: var(--surface);
+            border-radius: 4px;
+        }
+        
+        #reportForm::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+        
+        #reportForm::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+        
+        .form-group { 
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .form-group label { 
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            letter-spacing: -0.01em;
+        }
+        
+        .form-group input, 
+        .form-group textarea, 
+        .form-group select {
             width: 100%;
-            padding: 10px 15px; 
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size: 0.9rem; 
-            font-family: 'Poppins', sans-serif;
-            transition: all 0.3s ease;
-            background: var(--input-dark);
-            color: var(--text-light);
-        }
-
-        .form-group textarea { min-height: 80px; }
-        .form-group input::placeholder, .form-group textarea::placeholder { color: var(--text-muted); }
-        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
-            outline: none;
-            border-color: var(--primary-accent);
-            box-shadow: 0 0 15px rgba(142, 45, 226, 0.4);
-            background: var(--container-dark);
-        }
-        
-        .address-search-group { display: flex; gap: 10px; }
-        .address-search-group input { flex-grow: 1; }
-        
-        .search-btn, .submit-btn, .resolve-btn, .locate-btn {
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: 'Poppins', sans-serif;
-            font-weight: 600;
-        }
-
-        .search-btn { padding: 0 20px; background: #444; color: var(--text-light); }
-        .search-btn:hover { background: #555; }
-        
-        .submit-btn {
-            background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
-            color: white;
-            padding: 14px 40px;
-            font-size: 1rem;
-            box-shadow: 0 5px 15px rgba(142, 45, 226, 0.3);
-            margin-top: auto; 
-            flex-shrink: 0; 
-        }
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(142, 45, 226, 0.5);
-        }
-        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
-        
-        .map-section { height: 100%; position: relative; }
-        #map { width: 100%; height: 100%; }
-        
-        .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--container-dark); color: var(--text-light); box-shadow: 0 5px 15px rgba(0,0,0,0.4); }
-        .leaflet-popup-content { font-size: 14px; margin: 15px; }
-        .leaflet-popup-content h4 { margin: 0 0 10px; color: white; font-weight: 600; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
-        .leaflet-popup-content p { margin: 5px 0; color: var(--text-muted); }
-        .leaflet-popup-content p strong { color: var(--text-light); }
-        .leaflet-container a.leaflet-popup-close-button { color: var(--text-light); }
-        .resolve-btn { width: 100%; padding: 8px; margin-top: 10px; background-color: var(--success-color); color: white; }
-        .resolve-btn:hover { background-color: var(--success-hover); }
-        
-        .status-message { 
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -40%);
-            background: rgba(31, 31, 58, 0.9);
-            color: white;
-            padding: 15px 30px;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
             border-radius: 12px;
+            font-size: 0.9375rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--surface);
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .form-group textarea { 
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .form-group input::placeholder, 
+        .form-group textarea::placeholder { 
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+        
+        .form-group input:focus, 
+        .form-group textarea:focus, 
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--surface-elevated);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+        }
+        
+        .address-search-group { 
+            display: flex;
+            gap: 12px;
+        }
+        
+        .address-search-group input { 
+            flex-grow: 1;
+        }
+        
+        .btn {
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Inter', sans-serif;
             font-weight: 600;
-            text-align: center;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-            z-index: 5000;
-            backdrop-filter: blur(5px);
-            border: 1px solid var(--border-color);
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.4s ease;
+            font-size: 0.9375rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             white-space: nowrap;
         }
-        .status-message.show { opacity: 1; visibility: visible; transform: translate(-50%, -50%); }
-        .status-message.success { background: rgba(142, 45, 226, 0.9); }
-        .status-message.error { background: rgba(220, 53, 69, 0.9); }
-        .status-message.info { background: rgba(52, 152, 219, 0.9); }
+
+        .search-btn { 
+            padding: 12px 24px;
+            background: var(--surface-elevated);
+            color: var(--text-primary);
+            border: 2px solid var(--border);
+        }
+        
+        .search-btn:hover { 
+            background: var(--surface);
+            border-color: var(--primary-light);
+            transform: translateY(-1px);
+        }
+        
+        .search-btn:active {
+            transform: translateY(0);
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            padding: 16px 32px;
+            font-size: 1rem;
+            box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
+            margin-top: auto;
+            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .submit-btn:hover::before {
+            left: 100%;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(139, 92, 246, 0.5);
+        }
+        
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+        
+        .submit-btn:disabled { 
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .map-section { 
+            height: 100%;
+            position: relative;
+            background: var(--bg-primary);
+        }
+        
+        #map { 
+            width: 100%;
+            height: 100%;
+        }
+        
+        .leaflet-popup-content-wrapper, 
+        .leaflet-popup-tip { 
+            background: var(--surface-elevated);
+            color: var(--text-primary);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+        
+        .leaflet-popup-content { 
+            font-size: 14px;
+            margin: 18px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .leaflet-popup-content h4 { 
+            margin: 0 0 12px;
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 1.125rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+        }
+        
+        .leaflet-popup-content p { 
+            margin: 8px 0;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+        
+        .leaflet-popup-content p strong { 
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        
+        .leaflet-container a.leaflet-popup-close-button { 
+            color: var(--text-muted);
+            font-size: 24px;
+            padding: 8px 12px;
+        }
+        
+        .leaflet-container a.leaflet-popup-close-button:hover {
+            color: var(--text-primary);
+        }
+        
+        .resolve-btn { 
+            width: 100%;
+            padding: 10px;
+            margin-top: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .resolve-btn:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+        
+        .status-message { 
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            background: var(--surface-elevated);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-align: left;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            z-index: 5000;
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(400px);
+            min-width: 280px;
+            max-width: 420px;
+        }
+        
+        .status-message.show { 
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+        
+        .status-message.success { 
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-color: var(--primary);
+        }
+        
+        .status-message.error { 
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            border-color: var(--danger);
+        }
+        
+        .status-message.info { 
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border-color: #3b82f6;
+        }
         
         #map-legend {
             position: absolute;
-            bottom: 20px; right: 20px;
-            background: rgba(31, 31, 58, 0.95);
-            padding: 12px 18px;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            bottom: 24px;
+            right: 24px;
+            background: rgba(37, 37, 58, 0.95);
+            padding: 18px 22px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
             z-index: 1000;
-            backdrop-filter: blur(10px);
-            min-width: 200px;
+            backdrop-filter: blur(20px);
+            min-width: 220px;
         }
-        #map-legend h4 { margin: 0 0 8px 0; color: white; font-size: 1.05rem; font-weight: 600; text-align: center; }
-        #map-legend ul { list-style: none; padding: 0; margin: 0; }
-        #map-legend ul li { display: flex; align-items: center; margin-bottom: 6px; font-size: 0.875rem; color: var(--text-muted); }
-        #map-legend ul li img { width: 14px; height: auto; margin-right: 10px; }
+        
+        #map-legend h4 { 
+            margin: 0 0 12px 0;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: -0.01em;
+        }
+        
+        #map-legend ul { 
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        #map-legend ul li { 
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        #map-legend ul li:last-child {
+            margin-bottom: 0;
+        }
+        
+        #map-legend ul li img { 
+            width: 16px;
+            height: auto;
+            margin-right: 12px;
+        }
 
         .heatmap-legend {
             display: none;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid var(--border-color);
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
         }
-        .heatmap-legend.active { display: block; }
+        
+        .heatmap-legend.active { 
+            display: block;
+        }
+        
         .heatmap-gradient {
-            height: 25px;
+            height: 28px;
             background: linear-gradient(to right, 
-                rgba(0,0,255,0.7), 
-                rgba(0,255,255,0.75), 
-                rgba(0,255,0,0.8), 
-                rgba(255,255,0,0.85), 
-                rgba(255,140,0,0.9), 
-                rgba(255,0,0,1));
-            border-radius: 6px;
-            margin: 8px 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+                #3b82f6,
+                #06b6d4,
+                #fbbf24,
+                #f97316,
+                #ef4444);
+            border-radius: 8px;
+            margin: 10px 0;
+            box-shadow: 0 2px 12px rgba(139, 92, 246, 0.3);
         }
+        
         .heatmap-labels {
             display: flex;
             justify-content: space-between;
             font-size: 0.75rem;
-            color: var(--text-light);
-            font-weight: 500;
+            color: var(--text-secondary);
+            font-weight: 600;
         }
+        
         .heatmap-legend p {
             font-size: 0.875rem;
             margin-bottom: 6px;
-            color: white;
-            font-weight: 500;
+            color: var(--text-primary);
+            font-weight: 600;
         }
 
         .footer {
-            padding: 5px;
+            padding: 16px;
             text-align: center;
-            font-size: 0.65rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
-            background-color: var(--bg-dark);
-            border-top: 1px solid var(--border-color);
+            background-color: var(--bg-tertiary);
+            border-top: 1px solid var(--border);
             flex-shrink: 0;
         }
-        .footer p { margin: 0; padding: 0; opacity: 0.6; }
+        
+        .footer p { 
+            margin: 0;
+            padding: 0;
+            font-weight: 500;
+        }
         
         .leaflet-control-locate a, 
         .leaflet-control-recenter a, 
         .leaflet-control-toggle a, 
         .leaflet-control-clear a {
-            background-color: var(--input-dark);
-            border-radius: 4px;
-            border: 1px solid var(--border-color);
+            background: var(--surface-elevated);
+            border-radius: 12px;
+            border: 1px solid var(--border);
             text-align: center;
             font-size: 1.5rem;
-            line-height: 30px;
-            width: 30px; 
-            height: 30px;
-            display: block;
+            line-height: 40px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             text-decoration: none;
-            transition: all 0.3s ease;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
         
         .leaflet-control-locate a:hover, 
         .leaflet-control-recenter a:hover, 
         .leaflet-control-toggle a:hover {
-            background-color: var(--container-dark);
+            background: var(--surface);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.4);
         }
         
         .leaflet-control-toggle a {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
         }
         
         .leaflet-control-clear {
             opacity: 0;
             visibility: hidden;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             pointer-events: none;
         }
         
@@ -291,106 +580,198 @@
         }
         
         .leaflet-control-clear a {
-            background-color: #ff6b6b;
-            border-color: #ff5252;
+            background: linear-gradient(135deg, var(--danger), #dc2626);
+            border-color: var(--danger);
             color: white;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
         }
         
         .leaflet-control-clear a:hover {
-            background-color: #ff5252;
-            border-color: #ff3838;
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            transform: translateY(-2px);
         }
         
         .location-divider {
             display: flex;
             align-items: center;
             text-align: center;
-            margin: 15px 0;
+            margin: 24px 0;
             color: var(--text-muted);
-            font-size: 0.8rem;
-            font-weight: 500;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
         }
-        .location-divider::before, .location-divider::after {
+        
+        .location-divider::before, 
+        .location-divider::after {
             content: '';
             flex: 1;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 2px solid var(--border);
         }
-        .location-divider:not(:empty)::before { margin-right: .5em; }
-        .location-divider:not(:empty)::after { margin-left: .5em; }
+        
+        .location-divider:not(:empty)::before { 
+            margin-right: 16px;
+        }
+        
+        .location-divider:not(:empty)::after { 
+            margin-left: 16px;
+        }
         
         .locate-btn {
             width: 100%;
-            padding: 10px 15px;
-            background: transparent;
-            color: var(--text-light);
-            border: 2px solid var(--input-dark);
+            padding: 14px 20px;
+            background: var(--surface);
+            color: var(--text-primary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        
         .locate-btn:hover {
-            border-color: var(--primary-accent);
-            color: var(--primary-accent);
+            border-color: var(--primary);
+            background: var(--surface-elevated);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+        }
+        
+        .locate-btn:active {
+            transform: translateY(0);
         }
 
-        .map-preview { display: none; }
+        .map-preview { 
+            display: none;
+        }
+        
         .map-modal {
             display: none;
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: var(--bg-dark);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
             z-index: 3000;
             flex-direction: column;
         }
-        .map-modal.active { display: flex; }
-        #modal-map { flex-grow: 1; }
+        
+        .map-modal.active { 
+            display: flex;
+        }
+        
+        #modal-map { 
+            flex-grow: 1;
+        }
+        
         .modal-close-btn {
-            background: var(--primary-accent);
+            background: linear-gradient(135deg, var(--primary), var(--accent));
             color: white;
-            padding: 15px;
+            padding: 20px;
             text-align: center;
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 1rem;
             cursor: pointer;
             flex-shrink: 0;
+            transition: all 0.2s;
+            letter-spacing: -0.01em;
+        }
+        
+        .modal-close-btn:active {
+            background: linear-gradient(135deg, var(--primary-hover), #db2777);
         }
 
         @media (max-width: 1200px) {
-            html, body { height: auto; overflow: auto; }
-            body { padding: 0; }
-            .container { height: auto; max-height: none; border-radius: 0; display: block; }
-            .content { grid-template-columns: 1fr; overflow: visible; }
-            .form-section { border-right: none; padding: 30px 20px; height: auto; overflow: visible; }
-            #reportForm { height: auto; overflow-y: visible; }
-            .map-section, #map-legend { display: none; }
-            .footer { position: relative; }
+            html, body { 
+                height: auto;
+                overflow: auto;
+            }
+            
+            body { 
+                padding: 0;
+            }
+            
+            .container { 
+                height: auto;
+                max-height: none;
+                border-radius: 0;
+                display: block;
+            }
+            
+            .header {
+                padding: 20px 24px;
+            }
+            
+            .header h1 {
+                font-size: 1.75rem;
+            }
+            
+            .content { 
+                grid-template-columns: 1fr;
+                overflow: visible;
+            }
+            
+            .form-section { 
+                border-right: none;
+                padding: 24px;
+                height: auto;
+                overflow: visible;
+            }
+            
+            #reportForm { 
+                height: auto;
+                overflow-y: visible;
+            }
+            
+            .map-section, 
+            #map-legend { 
+                display: none;
+            }
+            
+            .footer { 
+                position: relative;
+            }
 
             .map-preview {
                 display: block;
-                height: 150px;
-                border-radius: 10px;
-                margin-bottom: 20px;
+                height: 180px;
+                border-radius: 16px;
+                margin-bottom: 24px;
                 overflow: hidden;
                 position: relative;
                 cursor: pointer;
-                border: 2px solid var(--border-color);
+                border: 2px solid var(--border);
+                background: var(--surface);
             }
+            
             .map-preview::after {
                 content: 'Clique para abrir o mapa e selecionar o local';
                 position: absolute;
-                top: 0; left: 0;
-                width: 100%; height: 100%;
-                background: rgba(0,0,0,0.6);
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(135deg, rgba(139, 92, 246, 0.9), rgba(236, 72, 153, 0.9));
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 color: white;
-                font-weight: 600;
+                font-weight: 700;
                 text-align: center;
-                padding: 10px;
-                font-size: 1.1rem;
+                padding: 24px;
+                font-size: 1.125rem;
+                letter-spacing: -0.01em;
+            }
+            
+            .status-message {
+                top: 16px;
+                right: 16px;
+                left: 16px;
+                min-width: auto;
             }
         }
     </style>
@@ -398,37 +779,45 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>💡 Cadê a Luz?</h1>
+            <div class="header-content">
+                <h1>
+                    <span class="emoji">💡</span>
+                    Cadê a Luz?
+                </h1>
+                <p class="header-subtitle">Reporte problemas elétricos na sua região</p>
+            </div>
         </div>
         <div class="content">
             <div class="form-section">
                 <div class="map-preview" id="map-preview"></div>
-                <h3>Reportar um Problema</h3>
-                <p>Selecione a localização e preencha os detalhes.</p>
+                <div class="form-header">
+                    <h3>Reportar Problema</h3>
+                    <p>Selecione a localização no mapa e preencha os detalhes do problema.</p>
+                </div>
                 <form id="reportForm">
                     <div class="form-group">
-                         <button type="button" id="locateBtn" class="locate-btn">
-                             🎯 Use minha localização atual
+                         <button type="button" id="locateBtn" class="btn locate-btn">
+                             🎯 Usar minha localização
                          </button>
                     </div>
                     <div class="location-divider">
                         <span>OU</span>
                     </div>
                     <div class="form-group">
-                        <label for="address">🔎 Endereço:</label>
+                        <label for="address">🔎 Buscar Endereço</label>
                         <div class="address-search-group">
-                            <input type="text" id="address" placeholder="Rua, Número, Cidade ou CEP">
-                            <button type="button" id="searchBtn" class="search-btn">Buscar</button>
+                            <input type="text" id="address" placeholder="Digite o endereço ou CEP">
+                            <button type="button" id="searchBtn" class="btn search-btn">Buscar</button>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="userName">👤 Seu Nome (Opcional):</label>
-                        <input type="text" id="userName" name="userName" placeholder="Ex: Maria S.">
+                        <label for="userName">👤 Seu Nome (Opcional)</label>
+                        <input type="text" id="userName" name="userName" placeholder="Ex: João Silva">
                     </div>
                     <div class="form-group">
-                        <label for="problemType">⚡ Tipo de Problema:</label>
+                        <label for="problemType">⚡ Tipo de Problema</label>
                         <select id="problemType" name="problemType" required>
-                            <option value="">Selecione...</option>
+                            <option value="">Selecione o tipo de problema</option>
                             <option value="Falta de Energia Total">Falta de Energia Total</option>
                             <option value="Poste com Faíscas">Poste com Faíscas</option>
                             <option value="Fio Caído na Rua">Fio Caído na Rua</option>
@@ -437,12 +826,14 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="description">📝 Descrição (Opcional):</label>
-                        <textarea id="description" name="description" placeholder="Ex: A rua inteira está sem luz desde as 10h."></textarea>
+                        <label for="description">📝 Descrição (Opcional)</label>
+                        <textarea id="description" name="description" placeholder="Descreva o problema com mais detalhes..."></textarea>
                     </div>
                     <input type="hidden" id="latitude" name="latitude" required>
                     <input type="hidden" id="longitude" name="longitude" required>
-                    <button type="submit" class="submit-btn" id="submitBtn">Reportar Problema</button>
+                    <button type="submit" class="btn submit-btn" id="submitBtn">
+                        <span>Reportar Problema</span>
+                    </button>
                 </form>
             </div>
             <div class="map-section">
@@ -468,14 +859,14 @@
             </div>
         </div>
         <footer class="footer">
-            <p>Projeto de "Programação Mobile II": Henrique Reche & Raquel Cristina Barbosa Ramos • Desenvolvido com Gemini, Vercel & Firebase.</p>
+            <p>Projeto de Programação Mobile II • Henrique Reche & Raquel Cristina Barbosa Ramos</p>
         </footer>
         <div id="statusMessage" class="status-message"></div>
     </div>
 
     <div class="map-modal" id="map-modal">
         <div id="modal-map"></div>
-        <div class="modal-close-btn" id="modal-close-btn">Confirmar Localização e Fechar</div>
+        <div class="modal-close-btn" id="modal-close-btn">✓ Confirmar Localização</div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -536,7 +927,7 @@
             const resolveBtn = document.createElement('button');
             resolveBtn.className = 'resolve-btn';
             resolveBtn.dataset.id = item.id;
-            resolveBtn.textContent = 'A Energia Voltou!';
+            resolveBtn.textContent = '✓ A Energia Voltou!';
             
             popup.appendChild(title);
             popup.appendChild(descPara);
@@ -811,12 +1202,11 @@
                         max: 1.0,
                         minOpacity: 0.5,
                         gradient: {
-                            0.0: '#0000ff',
-                            0.2: '#00ffff',
-                            0.4: '#00ff00',
-                            0.6: '#ffff00',
-                            0.8: '#ff8c00',
-                            1.0: '#ff0000'
+                            0.0: '#3b82f6',
+                            0.2: '#06b6d4',
+                            0.4: '#fbbf24',
+                            0.6: '#f97316',
+                            1.0: '#ef4444'
                         }
                     }).addTo(mapInstance);
                 }
@@ -882,7 +1272,7 @@
         
         function locateUser() {
             if (!navigator.geolocation) {
-                showStatus('Geolocalização não é suportada.', 'error');
+                showStatus('Geolocalização não é suportada neste navegador', 'error');
                 return;
             }
 
@@ -899,19 +1289,19 @@
                        map.setView([lat, lng], 16);
                     }
                     
-                    showStatus('Localização encontrada!', 'success');
+                    showStatus('Localização encontrada com sucesso!', 'success');
                 },
                 (error) => {
                     let message = 'Não foi possível obter sua localização.';
                     switch (error.code) {
                         case error.PERMISSION_DENIED:
-                            message = 'Você negou o pedido de Geolocalização.';
+                            message = 'Você negou a permissão de Geolocalização.';
                             break;
                         case error.POSITION_UNAVAILABLE:
                             message = 'Informação de localização não está disponível.';
                             break;
                         case error.TIMEOUT:
-                            message = 'O pedido de geolocalização expirou.';
+                            message = 'Tempo esgotado ao buscar localização.';
                             break;
                     }
                     showStatus(message, 'error');
@@ -930,7 +1320,7 @@
         }
 
         async function searchWithGeoapify(address) {
-            showStatus('Buscando endereço via Geoapify...', 'info');
+            showStatus('Buscando endereço...', 'info');
             const targetMap = isMobile ? map : map;
             
             const keyResponse = await fetch('/api/geoapify-key');
@@ -981,7 +1371,7 @@
 
             try {
                 if (cepRegex.test(userInput)) {
-                    showStatus('Consultando CEP via BrasilAPI...', 'info');
+                    showStatus('Consultando CEP...', 'info');
                     const cep = userInput.replace('-', '');
                     const url = `https://brasilapi.com.br/api/cep/v2/${cep}`;
                     
@@ -1013,7 +1403,7 @@
                         return;
                     }
                     
-                    showStatus('CEP encontrado. Refinando localização com Geoapify...', 'info');
+                    showStatus('Refinando localização...', 'info');
                     const fallbackAddress = `${cepData.street}, ${cepData.city}, ${cepData.state}, Brasil`;
                     await searchWithGeoapify(fallbackAddress);
 
@@ -1044,7 +1434,7 @@
             }
             
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Enviando...';
+            submitBtn.innerHTML = '<span>Enviando...</span>';
             
             const userName = document.getElementById('userName').value.trim() || "Anônimo";
             const reportData = {
@@ -1066,7 +1456,7 @@
                 showStatus('Erro ao enviar o reporte. Tente novamente.', 'error');
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Reportar Problema';
+                submitBtn.innerHTML = '<span>Reportar Problema</span>';
             }
         });
         
