@@ -152,29 +152,36 @@
         }
         .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
         
+        .clear-selection-container {
+            margin-bottom: 15px;
+            height: 0;
+            overflow: hidden;
+            transition: height 0.3s ease, margin 0.3s ease;
+        }
+        
+        .clear-selection-container.visible {
+            height: 50px;
+            margin-bottom: 15px;
+        }
+        
         .clear-btn {
             width: 100%;
-            padding: 10px 15px;
-            background: transparent;
+            padding: 12px 15px;
+            background: rgba(255, 107, 107, 0.1);
             color: #ff6b6b;
             border: 2px solid #ff6b6b;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            margin-bottom: 15px;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
+            font-size: 0.95rem;
         }
-        .clear-btn.visible {
-            opacity: 1;
-            visibility: visible;
-        }
+        
         .clear-btn:hover {
-            background: rgba(255, 107, 107, 0.1);
+            background: rgba(255, 107, 107, 0.2);
             border-color: #ff5252;
             color: #ff5252;
+            transform: translateY(-1px);
         }
         
         .map-section { height: 100%; position: relative; }
@@ -397,9 +404,11 @@
                 <h3>Reportar um Problema</h3>
                 <p>Selecione a localização e preencha os detalhes.</p>
                 <form id="reportForm">
-                    <button type="button" id="clearBtn" class="clear-btn">
-                        ✖ Limpar Seleção
-                    </button>
+                    <div class="clear-selection-container" id="clearContainer">
+                        <button type="button" id="clearBtn" class="clear-btn">
+                            ✖ Limpar Seleção do Mapa
+                        </button>
+                    </div>
                     <div class="form-group">
                          <button type="button" id="locateBtn" class="locate-btn">
                              🎯 Use minha localização atual
@@ -609,9 +618,9 @@
                 previewMarker = null;
             }
             
-            const clearBtn = document.getElementById('clearBtn');
-            if (clearBtn) {
-                clearBtn.classList.remove('visible');
+            const clearContainer = document.getElementById('clearContainer');
+            if (clearContainer) {
+                clearContainer.classList.remove('visible');
             }
             
             if (recenterButtonElement) {
@@ -859,9 +868,9 @@
                 L.DomUtil.removeClass(recenterButtonElement, 'leaflet-disabled');
             }
             
-            const clearBtn = document.getElementById('clearBtn');
-            if (clearBtn) {
-                clearBtn.classList.add('visible');
+            const clearContainer = document.getElementById('clearContainer');
+            if (clearContainer) {
+                clearContainer.classList.add('visible');
             }
         }
         
