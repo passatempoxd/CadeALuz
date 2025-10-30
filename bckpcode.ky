@@ -204,6 +204,26 @@
         #map-legend ul li { display: flex; align-items: center; margin-bottom: 5px; font-size: 0.85rem; color: var(--text-muted); }
         #map-legend ul li img { width: 12px; height: auto; margin-right: 8px; }
 
+        .heatmap-legend {
+            display: none;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+        .heatmap-legend.active { display: block; }
+        .heatmap-gradient {
+            height: 20px;
+            background: linear-gradient(to right, rgba(0,0,255,0.4), rgba(0,255,0,0.6), rgba(255,255,0,0.8), rgba(255,0,0,1));
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+        .heatmap-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
         .footer {
             padding: 5px;
             text-align: center;
@@ -215,7 +235,7 @@
         }
         .footer p { margin: 0; padding: 0; opacity: 0.6; }
         
-        .leaflet-control-locate a, .leaflet-control-recenter a {
+        .leaflet-control-locate a, .leaflet-control-recenter a, .leaflet-control-toggle a {
             background-color: var(--input-dark);
             border-radius: 4px;
             border: 1px solid var(--border-color);
@@ -226,8 +246,11 @@
             display: block;
             text-decoration: none;
         }
-        .leaflet-control-locate a:hover, .leaflet-control-recenter a:hover {
+        .leaflet-control-locate a:hover, .leaflet-control-recenter a:hover, .leaflet-control-toggle a:hover {
             background-color: var(--container-dark);
+        }
+        .leaflet-control-toggle a {
+            font-size: 1.2rem;
         }
         
         .location-divider {
@@ -377,13 +400,22 @@
                 <div id="map"></div>
                 <div id="map-legend">
                     <h4>Legenda</h4>
-                    <ul>
+                    <ul id="marker-legend">
                         <li><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png"> Falta de Energia Total</li>
                         <li><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png"> Poste com Faíscas</li>
                         <li><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png"> Fio Caído na Rua</li>
                         <li><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"> Luz Piscando</li>
                         <li><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png"> Outro</li>
                     </ul>
+                    <div class="heatmap-legend" id="heatmap-legend">
+                        <p style="font-size: 0.85rem; margin-bottom: 5px; color: var(--text-light);">Intensidade</p>
+                        <div class="heatmap-gradient"></div>
+                        <div class="heatmap-labels">
+                            <span>Baixa</span>
+                            <span>Média</span>
+                            <span>Alta</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -399,6 +431,7 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     
     <script>
         let db;
@@ -475,6 +508,8 @@
         let previewMarker = null;
         let recenterButtonElement = null;
         let lastKnownCoords = null;
+        let isHeatmapMode = true;
+        let heatmapLayer = null;
 
         function createMapInstance(containerId, options = {}) {
             const defaultOptions = {
@@ -498,6 +533,25 @@
             return mapInstance;
         }
         
+        function toggleVisualization() {
+            isHeatmapMode = !isHeatmapMode;
+            
+            const markerLegend = document.getElementById('marker-legend');
+            const heatmapLegendEl = document.getElementById('heatmap-legend');
+            
+            if (isHeatmapMode) {
+                if (markerLegend) markerLegend.style.display = 'none';
+                if (heatmapLegendEl) heatmapLegendEl.classList.add('active');
+            } else {
+                if (markerLegend) markerLegend.style.display = 'block';
+                if (heatmapLegendEl) heatmapLegendEl.classList.remove('active');
+            }
+            
+            updateMapMarkers(map, outageDataCache);
+            
+            showStatus(isHeatmapMode ? 'Modo Mapa de Calor ativado' : 'Modo Marcadores ativado', 'info');
+        }
+        
         function addControlsToMap(mapInstance) {
             const LocateControl = L.Control.extend({
                 onAdd: function() {
@@ -517,8 +571,17 @@
                     return btn;
                 }
             });
+            const ToggleControl = L.Control.extend({
+                onAdd: function() {
+                    const btn = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-toggle');
+                    btn.innerHTML = `<a href="#" title="Alternar Visualização">🔥</a>`;
+                    L.DomEvent.on(btn, 'click', L.DomEvent.stop).on(btn, 'click', toggleVisualization);
+                    return btn;
+                }
+            });
             new LocateControl({ position: 'topleft' }).addTo(mapInstance);
             new RecenterControl({ position: 'topleft' }).addTo(mapInstance);
+            new ToggleControl({ position: 'topleft' }).addTo(mapInstance);
         }
 
         if (isMobile) {
@@ -555,6 +618,11 @@
             map = createMapInstance('map', { zoomControl: true });
             addControlsToMap(map);
             map.on('click', (e) => updateSelectionMarker(e.latlng.lat, e.latlng.lng));
+            
+            const markerLegend = document.getElementById('marker-legend');
+            const heatmapLegendEl = document.getElementById('heatmap-legend');
+            if (markerLegend) markerLegend.style.display = 'none';
+            if (heatmapLegendEl) heatmapLegendEl.classList.add('active');
         }
 
         const icons = {
@@ -600,6 +668,16 @@
             }
         }
         
+        function getIntensityForProblem(problemType) {
+            switch (problemType) {
+                case "Falta de Energia Total": return 1.0;
+                case "Poste com Faíscas": return 0.8;
+                case "Fio Caído na Rua": return 0.9;
+                case "Luz Piscando": return 0.6;
+                default: return 0.5;
+            }
+        }
+        
         let outageDataCache = [];
         
         function fetchAndDisplayOutages() {
@@ -626,18 +704,49 @@
 
         function updateMapMarkers(mapInstance, data, isPreview = false) {
             mapInstance.outageMarkersLayer.clearLayers();
-            data.forEach(item => {
-                if (!item.latitude || !item.longitude) return;
+            
+            if (heatmapLayer && mapInstance.hasLayer(heatmapLayer)) {
+                mapInstance.removeLayer(heatmapLayer);
+                heatmapLayer = null;
+            }
+            
+            if (isHeatmapMode && !isPreview && data.length > 0) {
+                const heatmapData = data
+                    .filter(item => item.latitude && item.longitude)
+                    .map(item => {
+                        const intensity = getIntensityForProblem(item.problemType);
+                        return [item.latitude, item.longitude, intensity];
+                    });
                 
-                const icon = getIconForProblem(item.problemType);
-                const marker = L.marker([item.latitude, item.longitude], { icon: icon });
-                
-                if (!isPreview) {
-                    marker.bindPopup(createSecurePopup(item));
+                if (heatmapData.length > 0) {
+                    heatmapLayer = L.heatLayer(heatmapData, {
+                        radius: 25,
+                        blur: 20,
+                        maxZoom: 17,
+                        max: 1.0,
+                        gradient: {
+                            0.0: 'blue',
+                            0.3: 'cyan',
+                            0.5: 'lime',
+                            0.7: 'yellow',
+                            1.0: 'red'
+                        }
+                    }).addTo(mapInstance);
                 }
-                
-                marker.addTo(mapInstance.outageMarkersLayer);
-            });
+            } else {
+                data.forEach(item => {
+                    if (!item.latitude || !item.longitude) return;
+                    
+                    const icon = getIconForProblem(item.problemType);
+                    const marker = L.marker([item.latitude, item.longitude], { icon: icon });
+                    
+                    if (!isPreview) {
+                        marker.bindPopup(createSecurePopup(item));
+                    }
+                    
+                    marker.addTo(mapInstance.outageMarkersLayer);
+                });
+            }
         }
 
         function isValidCoordinate(lat, lng) {
