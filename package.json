@@ -1,7 +1,9 @@
 {
   "name": "cade-a-luz",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "build": "node ./inject-env.mjs"
+    "dev": "vercel dev",
+    "build": "echo 'No build step needed'"
   }
 }
